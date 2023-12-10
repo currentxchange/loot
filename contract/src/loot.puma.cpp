@@ -1,6 +1,6 @@
 #include "loot.puma.hpp"
 
-ACTION aastake::setconfig(const uint32_t& min_claim_period, const uint32_t& unstake_period)
+ACTION loot::setconfig(const uint32_t& min_claim_period, const uint32_t& unstake_period)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -18,7 +18,7 @@ ACTION aastake::setconfig(const uint32_t& min_claim_period, const uint32_t& unst
     conf_tbl.set(conf, get_self());
 }
 
-ACTION aastake::settoken(const name& contract, const symbol& symbol)
+ACTION loot::settoken(const name& contract, const symbol& symbol)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -43,7 +43,7 @@ ACTION aastake::settoken(const name& contract, const symbol& symbol)
     conf_tbl.set(conf, get_self());
 }
 
-ACTION aastake::addtemplates(const std::vector<template_item>& templates)
+ACTION loot::addtemplates(const std::vector<template_item>& templates)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -87,7 +87,7 @@ ACTION aastake::addtemplates(const std::vector<template_item>& templates)
     }
 }
 
-ACTION aastake::rmtemplates(const std::vector<template_item>& templates)
+ACTION loot::rmtemplates(const std::vector<template_item>& templates)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -108,7 +108,7 @@ ACTION aastake::rmtemplates(const std::vector<template_item>& templates)
     }
 }
 
-ACTION aastake::resetuser(const name& user)
+ACTION loot::resetuser(const name& user)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -150,7 +150,8 @@ ACTION aastake::resetuser(const name& user)
     }
 }
 
-ACTION aastake::regnewuser(const name& user)
+/*/
+ACTION loot::regnewuser(const name& user)
 {
     // check user auth
     if (!has_auth(user)) {
@@ -175,8 +176,72 @@ ACTION aastake::regnewuser(const name& user)
         row.hourly_rate = asset(0, config.token_symbol);
     });
 }
+/*/
 
-ACTION aastake::claim(const name& user, const vector<uint64_t>& asset_ids)
+ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
+    // Check user auth
+    if (!has_auth(user)) {
+        check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
+    }
+
+    // Check if the contract isn't frozen
+    const auto& config = check_config();
+
+    // Get users table instance
+    user_t user_tbl(get_self(), get_self().value);
+
+    // Check if the user isn't already registered
+    auto user_itr = user_tbl.find(user.value);
+    check(user_itr == user_tbl.end(), string("user " + user.to_string() + " is already registered").c_str());
+
+    // Handle referrer
+    if (referrer != ""_n && referrer != user) {
+        // Check if the referrer is already registered
+        auto referrer_itr = user_tbl.find(referrer.value);
+
+        // If the referrer is not registered, register the referrer
+        if (referrer_itr == user_tbl.end()) {
+            user_tbl.emplace(get_self(), [&](auto& row) {
+                row.user = referrer;
+                row.hourly_rate = asset(0, config.token_symbol);
+                row.referrer = ""_n; // No referrer for the referrer
+                row.refscore = 0;
+            });
+        }
+    }
+
+    // Register the new user
+    user_tbl.emplace(get_self(), [&](auto& row) {
+        row.user = user;
+        row.hourly_rate = asset(0, config.token_symbol);
+        row.referrer = (referrer != user) ? referrer : ""_n;
+        row.refscore = 0;
+    });
+
+    // Increment referrer's and referrer's referrer score
+    if (referrer != ""_n && referrer != user) {
+        auto referrer_itr = user_tbl.find(referrer.value);
+        if (referrer_itr != user_tbl.end()) {
+            user_tbl.modify(referrer_itr, get_self(), [&](auto& row) {
+                row.refscore++;
+
+                // Increment the referrer's referrer score if exists
+                if (row.referrer != ""_n) {
+                    auto ref_of_referrer_itr = user_tbl.find(row.referrer.value);
+                    if (ref_of_referrer_itr != user_tbl.end()) {
+                        user_tbl.modify(ref_of_referrer_itr, get_self(), [&](auto& ref_row) {
+                            ref_row.refscore++;
+                        });
+                    }
+                }
+            });
+        }
+    }
+}
+
+
+
+ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 {
     // check user auth
     if (!has_auth(user)) {
@@ -257,7 +322,7 @@ ACTION aastake::claim(const name& user, const vector<uint64_t>& asset_ids)
         .send();
 }
 
-ACTION aastake::unstake(const name& user, const vector<uint64_t>& asset_ids)
+ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
 {
     // check user auth
     if (!has_auth(user)) {
@@ -348,7 +413,7 @@ ACTION aastake::unstake(const name& user, const vector<uint64_t>& asset_ids)
 }
 
 [[eosio::on_notify("atomicassets::transfer")]] void
-aastake::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
+loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
 {
     // ignore outgoing transactions and transaction not destined to the dapp itself
     if (to != get_self() || from == get_self()) {

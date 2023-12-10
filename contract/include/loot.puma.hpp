@@ -7,7 +7,7 @@
 
 using namespace eosio;
 
-CONTRACT aastake : public contract
+CONTRACT loot : public contract
 {
 public:
     using contract::contract;
@@ -15,7 +15,8 @@ public:
     // ------------ structs ------------
 
     // public template struct for the addtemplates/rmtemplates actions
-    struct template_item {
+    struct template_item
+    {
         // id of the template (from the atomicassets)
         int32_t template_id;
         // name of the collection of this template
@@ -26,33 +27,32 @@ public:
 
     // ------------ admin actions ------------
 
-
     // set the contract config
-    ACTION setconfig(const uint32_t& min_claim_period, const uint32_t& unstake_period);
+    ACTION setconfig(const uint32_t &min_claim_period, const uint32_t &unstake_period);
 
     // set the contract token config
-    ACTION settoken(const name& contract, const symbol& symbol);
+    ACTION settoken(const name &contract, const symbol &symbol);
 
     // add the staking assets templates
-    ACTION addtemplates(const std::vector<template_item>& templates);
+    ACTION addtemplates(const std::vector<template_item> &templates);
 
     // remove the staking assets templates
-    ACTION rmtemplates(const std::vector<template_item>& templates);
+    ACTION rmtemplates(const std::vector<template_item> &templates);
 
     // unstake all assets & reset a user from the contract
     // used in cases of emergencies such as when a user can't unstake a removed template
-    ACTION resetuser(const name& user);
+    ACTION resetuser(const name &user);
 
     // ------------ user actions ------------
 
     // register a new user
-    ACTION regnewuser(const name& user);
+    ACTION regnewuser(const name &user, const name &referrer = ""_n);
 
     // claim the generated tokens
-    ACTION claim(const name& user, const vector<uint64_t>& asset_ids);
+    ACTION claim(const name &user, const vector<uint64_t> &asset_ids);
 
     // unstake the user's assets
-    ACTION unstake(const name& user, const vector<uint64_t>& asset_ids);
+    ACTION unstake(const name &user, const vector<uint64_t> &asset_ids);
 
     // ------------ notify handlers ------------
 
@@ -62,7 +62,8 @@ public:
 private:
     // token stat struct
     // taken from the reference eosio.token contract
-    struct stat_s {
+    struct stat_s
+    {
         asset supply;
         asset max_supply;
         name issuer;
@@ -72,14 +73,16 @@ private:
 
     TABLE user_s
     {
-        // name of the user
-        name user;
-        // the total hourly_rate this user has
-        asset hourly_rate;
+        name user;                        // Name of the user
+        asset hourly_rate;                // The total hourly_rate this user has
+        name referrer;                    // Name of the referrer (if any)
+        uint64_t refscore = 0; // Number of referrals made by the user
 
         auto primary_key() const { return user.value; }
-        // secondary index to sort/query the users by their rate
+        // Secondary index to sort/query the users by their rate
         uint64_t by_rate() const { return hourly_rate.amount; }
+        // Secondary index to sort/query the users by their number of referrals
+        uint64_t by_referrals() const { return refscore; }
     };
 
     TABLE asset_s
@@ -123,12 +126,13 @@ private:
     // token stat table definition
     typedef multi_index<name("stat"), stat_s> stat_t;
 
-    typedef multi_index<name("users"), user_s,
-        indexed_by<name("rate"), const_mem_fun<user_s, uint64_t, &user_s::by_rate>>>
-        user_t;
+typedef multi_index<name("users"), user_s,
+    indexed_by<name("rate"), const_mem_fun<user_s, uint64_t, &user_s::by_rate>>,
+    indexed_by<name("referrals"), const_mem_fun<user_s, uint64_t, &user_s::by_referrals>>
+> user_t;
 
     typedef multi_index<name("assets"), asset_s,
-        indexed_by<name("owner"), const_mem_fun<asset_s, uint64_t, &asset_s::by_owner>>>
+                        indexed_by<name("owner"), const_mem_fun<asset_s, uint64_t, &asset_s::by_owner>>>
         asset_t;
 
     typedef multi_index<name("templates"), template_s> template_t;
@@ -146,7 +150,7 @@ private:
         check(conf_tbl.exists(), "The contract is not initialized yet");
 
         // get  current config
-        const auto& conf = conf_tbl.get();
+        const auto &conf = conf_tbl.get();
 
         return conf;
     }
