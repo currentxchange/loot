@@ -1,26 +1,6 @@
-#include <ezstake.hpp>
+#include "loot.puma.hpp"
 
-ACTION ezstake::setfrozen(const bool& is_frozen)
-{
-    // check contract auth
-    check(has_auth(get_self()), "this action is admin only");
-
-    // get config table instance
-    config_t conf_tbl(get_self(), get_self().value);
-
-    // get/create current config
-    auto conf = conf_tbl.get_or_default(config {});
-
-    check(!(conf.is_frozen && is_frozen), "contract is already frozen");
-    check(!(!conf.is_frozen && !is_frozen), "contract is already non-frozen");
-
-    conf.is_frozen = is_frozen;
-
-    // save the new config
-    conf_tbl.set(conf, get_self());
-}
-
-ACTION ezstake::setconfig(const uint32_t& min_claim_period, const uint32_t& unstake_period)
+ACTION aastake::setconfig(const uint32_t& min_claim_period, const uint32_t& unstake_period)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -38,7 +18,7 @@ ACTION ezstake::setconfig(const uint32_t& min_claim_period, const uint32_t& unst
     conf_tbl.set(conf, get_self());
 }
 
-ACTION ezstake::settoken(const name& contract, const symbol& symbol)
+ACTION aastake::settoken(const name& contract, const symbol& symbol)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -63,7 +43,7 @@ ACTION ezstake::settoken(const name& contract, const symbol& symbol)
     conf_tbl.set(conf, get_self());
 }
 
-ACTION ezstake::addtemplates(const std::vector<template_item>& templates)
+ACTION aastake::addtemplates(const std::vector<template_item>& templates)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -107,7 +87,7 @@ ACTION ezstake::addtemplates(const std::vector<template_item>& templates)
     }
 }
 
-ACTION ezstake::rmtemplates(const std::vector<template_item>& templates)
+ACTION aastake::rmtemplates(const std::vector<template_item>& templates)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -128,7 +108,7 @@ ACTION ezstake::rmtemplates(const std::vector<template_item>& templates)
     }
 }
 
-ACTION ezstake::resetuser(const name& user)
+ACTION aastake::resetuser(const name& user)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -170,7 +150,7 @@ ACTION ezstake::resetuser(const name& user)
     }
 }
 
-ACTION ezstake::regnewuser(const name& user)
+ACTION aastake::regnewuser(const name& user)
 {
     // check user auth
     if (!has_auth(user)) {
@@ -196,7 +176,7 @@ ACTION ezstake::regnewuser(const name& user)
     });
 }
 
-ACTION ezstake::claim(const name& user, const vector<uint64_t>& asset_ids)
+ACTION aastake::claim(const name& user, const vector<uint64_t>& asset_ids)
 {
     // check user auth
     if (!has_auth(user)) {
@@ -277,7 +257,7 @@ ACTION ezstake::claim(const name& user, const vector<uint64_t>& asset_ids)
         .send();
 }
 
-ACTION ezstake::unstake(const name& user, const vector<uint64_t>& asset_ids)
+ACTION aastake::unstake(const name& user, const vector<uint64_t>& asset_ids)
 {
     // check user auth
     if (!has_auth(user)) {
@@ -368,7 +348,7 @@ ACTION ezstake::unstake(const name& user, const vector<uint64_t>& asset_ids)
 }
 
 [[eosio::on_notify("atomicassets::transfer")]] void
-ezstake::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
+aastake::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
 {
     // ignore outgoing transactions and transaction not destined to the dapp itself
     if (to != get_self() || from == get_self()) {
