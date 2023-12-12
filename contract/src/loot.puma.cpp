@@ -56,8 +56,8 @@ ACTION loot::addtemplates(const std::vector<template_item>& templates)
 
     for (const template_item& t : templates) {
         // check if the hourly rate is valid
-        check(t.hourly_rate.amount > 0, "hourly_rate must be positive");
-        check(config.token_symbol == t.hourly_rate.symbol, "symbol mismatch");
+        check(t.timeunit_rate.amount > 0, "timeunit_rate must be positive");
+        check(config.token_symbol == t.timeunit_rate.symbol, "symbol mismatch");
 
         // check if the template exists in atomicassets and it's valid
         const auto& aa_template_tbl = atomicassets::get_templates(t.collection);
@@ -75,13 +75,13 @@ ACTION loot::addtemplates(const std::vector<template_item>& templates)
             template_tbl.emplace(get_self(), [&](template_s& row) {
                 row.template_id = t.template_id;
                 row.collection = t.collection;
-                row.hourly_rate = t.hourly_rate;
+                row.timeunit_rate = t.timeunit_rate;
             });
         } else {
             template_tbl.modify(template_row, get_self(), [&](template_s& row) {
                 row.template_id = t.template_id;
                 row.collection = t.collection;
-                row.hourly_rate = t.hourly_rate;
+                row.timeunit_rate = t.timeunit_rate;
             });
         }
     }
@@ -173,12 +173,12 @@ ACTION loot::regnewuser(const name& user)
 
     user_tbl.emplace(user, [&](user_s& row) {
         row.user = user;
-        row.hourly_rate = asset(0, config.token_symbol);
+        row.timeunit_rate = asset(0, config.token_symbol);
     });
 }
 /*/
 
-ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
+ACTION loot::regnewuser(const name& user, const name& referrer ) {
     // Check user auth
     if (!has_auth(user)) {
         check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
@@ -203,7 +203,7 @@ ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
         if (referrer_itr == user_tbl.end()) {
             user_tbl.emplace(get_self(), [&](auto& row) {
                 row.user = referrer;
-                row.hourly_rate = asset(0, config.token_symbol);
+                row.timeunit_rate = asset(0, config.token_symbol);
                 row.referrer = ""_n; // No referrer for the referrer
                 row.refscore = 0;
             });
@@ -213,7 +213,7 @@ ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
     // Register the new user
     user_tbl.emplace(get_self(), [&](auto& row) {
         row.user = user;
-        row.hourly_rate = asset(0, config.token_symbol);
+        row.timeunit_rate = asset(0, config.token_symbol);
         row.referrer = (referrer != user) ? referrer : ""_n;
         row.refscore = 0;
     });
@@ -240,7 +240,7 @@ ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
 }
 
 
-
+/*/
 ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 {
     // check user auth
@@ -289,7 +289,7 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("assert (" + to_string(asset_id) + ") does not exist").c_str());
+            check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
         }
 
         // check if the asset's template is stakeable
@@ -307,7 +307,7 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
         }
 
         // increment the claimed amount
-        claimed_amount.amount += (template_itr->hourly_rate.amount * period_sec) / 3600;
+        claimed_amount.amount += (template_itr->timeunit_rate.amount * period_sec) / 300;
 
         // reset the last claim time
         asset_tbl.modify(asset_itr, user, [&](asset_s& row) { row.last_claim = current_time_point(); });
@@ -321,6 +321,93 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
         make_tuple(get_self(), user, claimed_amount, string("Staking reward")))
         .send();
 }
+/*/
+
+ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
+{
+    // check user auth
+    if (!has_auth(user)) {
+        check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
+    }
+
+    // check if the contract isn't frozen
+    const auto& config = check_config();
+
+    // get users table instance
+    user_t user_tbl(get_self(), get_self().value);
+
+    const auto& user_itr = user_tbl.find(user.value);
+    
+    // --- Calculate Bonus Reward --- //
+    uint64_t refscore = user_itr->refscore;
+    double multiplier = 1.0 + 0.01 * refscore;
+
+    // check if the user is registered
+    if (user_itr == user_tbl.end()) {
+        check(false, string("user " + user.to_string() + " is not registered").c_str());
+    }
+
+    // get template table instance
+    template_t template_tbl(get_self(), get_self().value);
+    // get asset table instance
+    asset_t asset_tbl(get_self(), get_self().value);
+
+    asset claimed_amount = asset(0, config.token_symbol);
+
+    // get the assets table (scoped to the contract)
+    const auto& aa_asset_tbl = atomicassets::get_assets(get_self());
+
+    for (const uint64_t& asset_id : asset_ids) {
+        // find the asset data, to get the template id from it
+        const auto& asset_itr = asset_tbl.find(asset_id);
+
+        // check if the asset is staked
+        if (asset_itr == asset_tbl.end()) {
+            check(false, string("asset (" + to_string(asset_id) + ") is not staked").c_str());
+        }
+
+        // check if the asset belongs to the user
+        if (asset_itr->owner != user) {
+            check(false, string("asset (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
+        }
+
+        // find the asset data, to get the template id from it
+        const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
+
+        if (aa_asset_itr == aa_asset_tbl.end()) {
+            check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
+        }
+
+        // check if the asset's template is stakeable
+        const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);
+
+        if (template_itr == template_tbl.end()) {
+            check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
+        }
+
+        auto period_sec = current_time_point().sec_since_epoch() - asset_itr->last_claim.sec_since_epoch();
+
+        // check if the asset is not in cooldown
+        if (period_sec < config.min_claim_period) {
+            check(false, string("asset (" + to_string(asset_id) + ") isn't ripe to collect. 5 minutes between claims.").c_str());
+        }
+
+        // increment the claimed amount
+        claimed_amount.amount += (template_itr->timeunit_rate.amount * period_sec) / 300 * multiplier;
+
+        // reset the last claim time
+        asset_tbl.modify(asset_itr, user, [&](asset_s& row) { row.last_claim = current_time_point(); });
+    }
+
+    // fail if the reward is 0
+    check(claimed_amount.amount > 0, "nothing to claim");
+
+    // send the tokens
+    action(permission_level { get_self(), name("active") }, config.token_contract, name("transfer"),
+        make_tuple(get_self(), user, claimed_amount, string("Loot reward with referral bonus multiplier of " + to_string(refscore) + "via lamanadapuma collection. Seek el White Puma: https://puma.red")))
+        .send();
+}
+
 
 ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
 {
@@ -373,7 +460,7 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("assert (" + to_string(asset_id) + ") does not exist").c_str());
+            check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
         }
 
         // check if the asset's template is stakeable
@@ -391,7 +478,7 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
         }
 
         // increment the removed amount
-        removed_rate += template_itr->hourly_rate;
+        removed_rate += template_itr->timeunit_rate;
 
         // remove the assets from the user's staked assets
         asset_tbl.erase(asset_itr);
@@ -399,16 +486,16 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
 
     // sanity check
     // this should never happen unless the template rate was changed after staking
-    check(removed_rate <= user_itr->hourly_rate, "unstaked rate larger than user's rate; this shouldn't happen !!");
+    check(removed_rate <= user_itr->timeunit_rate, "unstaked rate larger than user's rate; this shouldn't happen !!");
 
     // save the new rate
     user_tbl.modify(user_itr, same_payer, [&](auto& row) {
-        row.hourly_rate -= removed_rate;
+        row.timeunit_rate -= removed_rate;
     });
 
     // send the assets back
     action(permission_level { get_self(), name("active") }, atomicassets::ATOMICASSETS_ACCOUNT, name("transfer"),
-        make_tuple(get_self(), user, asset_ids, string("Unstaking")))
+        make_tuple(get_self(), user, asset_ids, string("Unstaking Loot")))
         .send();
 }
 
@@ -453,7 +540,7 @@ loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("assert (" + to_string(asset_id) + ") does not exist").c_str());
+            check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
         }
 
         // check if the asset's template is stakeable
@@ -464,7 +551,7 @@ loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
         }
 
         // increment the added rate
-        added_rate += template_itr->hourly_rate;
+        added_rate += template_itr->timeunit_rate;
 
         // save the asset
         asset_tbl.emplace(get_self(), [&](asset_s& row) {
@@ -476,6 +563,6 @@ loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
 
     // save the new rate
     user_tbl.modify(user_itr, same_payer, [&](auto& row) {
-        row.hourly_rate += added_rate;
+        row.timeunit_rate += added_rate;
     });
 }

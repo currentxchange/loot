@@ -1,6 +1,6 @@
-# ezstake
+# loot by White Puma
 
-Smart contract for customizable NFT staking using Atomicassets standard.
+Smart contract for NFT staking using Atomicassets standard. Based on [ezstake](https://github.com/benjiewheeler/ezstake).
 
 This contract is designed to work out-of-the-box, without the need to modify the source code.
 

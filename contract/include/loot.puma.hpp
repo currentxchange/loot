@@ -22,7 +22,7 @@ public:
         // name of the collection of this template
         name collection;
         // the staking power provided by this template
-        asset hourly_rate;
+        asset timeunit_rate;
     };
 
     // ------------ admin actions ------------
@@ -74,13 +74,13 @@ private:
     TABLE user_s
     {
         name user;                        // Name of the user
-        asset hourly_rate;                // The total hourly_rate this user has
+        asset timeunit_rate;                // The total timeunit_rate this user has
         name referrer;                    // Name of the referrer (if any)
         uint64_t refscore = 0; // Number of referrals made by the user
 
         auto primary_key() const { return user.value; }
         // Secondary index to sort/query the users by their rate
-        uint64_t by_rate() const { return hourly_rate.amount; }
+        uint64_t by_rate() const { return timeunit_rate.amount; }
         // Secondary index to sort/query the users by their number of referrals
         uint64_t by_referrals() const { return refscore; }
     };
@@ -106,7 +106,7 @@ private:
         // name of the collection of this template
         name collection;
         // the staking power provided by this template
-        asset hourly_rate;
+        asset timeunit_rate;
 
         auto primary_key() const { return uint64_t(template_id); }
     };
@@ -116,11 +116,13 @@ private:
         // the name of the token contract
         name token_contract = name("moneda.puma");
         // the name of the token symbol
-        symbol token_symbol = symbol(symbol_code("P"), 8);
+        symbol token_symbol = symbol(symbol_code("PUMA"), 8);
         // the minimum time (in seconds) that a user is required to wait between each claim action
-        uint32_t min_claim_period = 600;
+        uint32_t min_claim_period = 300;
         // the minimum time (in seconds) that a user is required to wait until they can unstake their assets
-        uint32_t unstake_period = 86400 * 3;
+        uint32_t unstake_period = 300;
+
+
     };
 
     // token stat table definition

@@ -1,11 +1,11 @@
 {
-	"name": "ezstake",
+	"name": "loot",
 	"private": true,
 	"version": "1.0.0",
 	"description": "Smart contract for customizable NFT staking using Atomicassets standard",
 	"scripts": {
-		"build:dev": "cd contract; blanc++ -I include src/ezstake.cpp",
-		"build:prod": "cd contract; cdt-cpp -I include src/ezstake.cpp",
+		"build:dev": "cd contract; blanc++ -I include src/loot.puma.cpp",
+		"build:prod": "cd contract; cdt-cpp -I include src/loot.puma.cpp",
 		"test": "mocha -s 250 -r ts-node/register tests/**/*.spec.ts"
 	},
 	"keywords": [
@@ -16,9 +16,9 @@
 		"staking"
 	],
 	"author": {
-		"name": "Benjie",
-		"email": "benjiewheeler@protonmail.com",
-		"url": "https://github.com/benjiewheeler"
+		"name": "White Puma",
+		"email": "elwhitepuma@gmail.com",
+		"url": "https://github.com/elwhitepuma"
 	},
 	"devDependencies": {
 		"@greymass/eosio": "~0.5.5",
