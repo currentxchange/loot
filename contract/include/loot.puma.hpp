@@ -5,6 +5,7 @@
 #include <eosio/eosio.hpp>
 #include <eosio/singleton.hpp>
 
+
 using namespace eosio;
 
 CONTRACT loot : public contract
@@ -121,8 +122,6 @@ private:
         uint32_t min_claim_period = 300;
         // the minimum time (in seconds) that a user is required to wait until they can unstake their assets
         uint32_t unstake_period = 300;
-
-
     };
 
     // token stat table definition

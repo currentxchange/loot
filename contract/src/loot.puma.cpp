@@ -1,5 +1,5 @@
 #include "loot.puma.hpp"
-
+// (300, 300)
 ACTION loot::setconfig(const uint32_t& min_claim_period, const uint32_t& unstake_period)
 {
     // check contract auth
@@ -132,7 +132,8 @@ ACTION loot::resetuser(const name& user)
     vector<uint64_t> staked_assets = {};
 
     // get the secondary index
-    auto owner_idx = asset_tbl.get_index<name("owner")>();
+    //auto owner_idx = asset_tbl.get_index<name("owner")>();
+    auto owner_idx = asset_tbl.get_index<"owner"_n>();
     auto owner_itr = owner_idx.lower_bound(user.value);
 
     // iterate through the rows and erase them
@@ -210,12 +211,20 @@ ACTION loot::regnewuser(const name& user, const name& referrer ) {
         }
     }
 
+    // --- Bonus if you are refered --- //
+        uint32_t newscore;
+        if (referrer != ""_n && referrer != user) {
+            newscore = 1;
+        } else {
+            newscore = 0;
+        }
+
     // Register the new user
     user_tbl.emplace(get_self(), [&](auto& row) {
         row.user = user;
         row.timeunit_rate = asset(0, config.token_symbol);
         row.referrer = (referrer != user) ? referrer : ""_n;
-        row.refscore = 0;
+        row.refscore = newscore;
     });
 
     // Increment referrer's and referrer's referrer score
@@ -323,6 +332,12 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 }
 /*/
 
+//
+
+
+
+
+
 ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 {
     // check user auth
@@ -340,17 +355,58 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
     
     // --- Calculate Bonus Reward --- //
     uint64_t refscore = user_itr->refscore;
-    double multiplier = 1.0 + 0.01 * refscore;
+    uint32_t refscore_lvl;
 
-    // check if the user is registered
-    if (user_itr == user_tbl.end()) {
-        check(false, string("user " + user.to_string() + " is not registered").c_str());
-    }
-
-    // get template table instance
+        // get template table instance
     template_t template_tbl(get_self(), get_self().value);
     // get asset table instance
     asset_t asset_tbl(get_self(), get_self().value);
+
+
+    std::vector<uint64_t> tetrahedral = {1, 4, 10, 20, 35, 56, 84, 120, 165, 220, 286, 364, 455, 560, 680, 816, 969, 1140, 1330, 1540, 1771, 2024, 2300, 2600, 2925, 3276, 3654, 4060, 4495, 4960, 5456, 5984, 6545, 7140, 7770, 8436, 9139, 9880, 10660, 11480, 12341, 13244, 14190, 15180, 999999999};
+
+    for (size_t i = 0; i < tetrahedral.size(); ++i) {
+        if (refscore > (tetrahedral[i] + 1)) {
+            refscore_lvl = i + 1;
+        }
+    }
+
+
+    // Calculate the total number of templates staked by the user
+    uint32_t total_templates = 0;
+    uint32_t template_lvl = 0;
+
+    auto owner_index = asset_tbl.get_index<"owner"_n>();
+    auto owner_itr = owner_index.find(user.value);
+    if (owner_itr != owner_index.end())
+    {
+        //total_templates = owner_index.rows.at(0).count;
+        auto it = owner_itr;
+            auto end = owner_index.end();
+            while (it != end) {
+                total_templates++;
+                it++;
+            }
+    }
+
+
+    for (size_t i = 0; i < tetrahedral.size(); ++i) {
+        if (total_templates > (tetrahedral[i] + 1)) {
+            template_lvl = i + 1;
+        }
+    }
+
+
+    uint32_t multiplier = template_lvl * refscore_lvl;
+    // --- Sanity check --- //
+    check(multiplier < 999, string("You've broken the timespace continuum").c_str());
+
+    // check if the user is registered
+    if (user_itr == user_tbl.end()) {
+        check(false, string("Wild Puma codenamed " + user.to_string() + " is not registered").c_str());
+    }
+
+
 
     asset claimed_amount = asset(0, config.token_symbol);
 
@@ -363,19 +419,19 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 
         // check if the asset is staked
         if (asset_itr == asset_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") is not staked").c_str());
+            check(false, string("puma asset (" + to_string(asset_id) + ") is not staked").c_str());
         }
 
         // check if the asset belongs to the user
         if (asset_itr->owner != user) {
-            check(false, string("asset (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
+            check(false, string("puma asset  (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
         }
 
         // find the asset data, to get the template id from it
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
+            check(false, string("puma asset  (" + to_string(asset_id) + ") does not exist").c_str());
         }
 
         // check if the asset's template is stakeable
@@ -392,7 +448,7 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
             check(false, string("asset (" + to_string(asset_id) + ") isn't ripe to collect. 5 minutes between claims.").c_str());
         }
 
-        // increment the claimed amount
+        // increment the claimed amount + add multiplier 
         claimed_amount.amount += (template_itr->timeunit_rate.amount * period_sec) / 300 * multiplier;
 
         // reset the last claim time
@@ -507,10 +563,10 @@ loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
         return;
     }
 
-    // ignore transactions if the memo isn't stake
+    /*/ ignore transactions if the memo isn't stake
     if (memo != "stake") {
         return;
-    }
+    }/*/
 
     // check if the contract isn't frozen
     const auto& config = check_config();
