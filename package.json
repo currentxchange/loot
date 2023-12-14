@@ -6,6 +6,8 @@
 	"scripts": {
 		"build:dev": "cd contract; blanc++ -I include src/loot.puma.cpp",
 		"build:prod": "cd contract; cdt-cpp -I include src/loot.puma.cpp",
+		"build:wax": "cd contract; eosio-cpp -I include src/loot.puma.cpp -abigen_output=loot.puma.abi",
+		"build:abi": "cd contract; eosio-abigen loot.puma.cpp --contract=loot --output=lootpumas.abi",
 		"test": "mocha -s 250 -r ts-node/register tests/**/*.spec.ts"
 	},
 	"keywords": [

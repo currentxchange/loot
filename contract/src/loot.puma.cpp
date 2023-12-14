@@ -1,4 +1,4 @@
-#include "loot.puma.hpp"
+#include <loot.puma.hpp>
 // (300, 300)
 ACTION loot::setconfig(const uint32_t& min_claim_period, const uint32_t& unstake_period)
 {

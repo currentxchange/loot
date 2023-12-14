@@ -1,4 +1,4 @@
-# loot by White Puma
+# loot by [White Puma](https://puma.red)
 
 Smart contract for NFT staking using Atomicassets standard. Based on [ezstake](https://github.com/benjiewheeler/ezstake).
 
@@ -50,12 +50,3 @@ cleos -u <your_api_endpoint> set contract <account> $PWD contract/ezstake.wasm c
 # dont forget to add eosio.code permission
 cleos -u <your_api_endpoint> set account permission <account> active --add-code
 ```
-
-## Want more features ?
-
-_Hire me_ ;)
-
-[![Discord Badge](https://img.shields.io/static/v1?message=Discord&label=Benjie%235458&style=flat&logo=discord&color=7289da&logoColor=7289da)](https://discordapp.com/users/789556474002014219)
-[![Telegram Badge](https://img.shields.io/static/v1?message=Telegram&label=benjie_wh&style=flat&logo=telegram&color=229ED9)](https://t.me/benjie_wh)
-[![Protonmail Badge](https://img.shields.io/static/v1?message=Email&label=ProtonMail&style=flat&logo=protonmail&color=6d4aff&logoColor=white)](mailto:benjiewheeler@protonmail.com)
-[![Github Badge](https://img.shields.io/static/v1?message=Github&label=benjiewheeler&style=flat&logo=github&color=171515)](https://github.com/benjiewheeler)
