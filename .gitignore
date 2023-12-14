@@ -133,5 +133,4 @@ dist
 .vscode/
 
 # generated files
-*.abi
-*.wasm
+

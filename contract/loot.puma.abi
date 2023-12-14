@@ -1,0 +1,273 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.2",
+    "types": [],
+    "structs": [
+        {
+            "name": "addtemplates",
+            "base": "",
+            "fields": [
+                {
+                    "name": "templates",
+                    "type": "template_item[]"
+                }
+            ]
+        },
+        {
+            "name": "asset_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "asset_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "last_claim",
+                    "type": "time_point_sec"
+                }
+            ]
+        },
+        {
+            "name": "claim",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                }
+            ]
+        },
+        {
+            "name": "config",
+            "base": "",
+            "fields": [
+                {
+                    "name": "is_frozen",
+                    "type": "bool"
+                },
+                {
+                    "name": "token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "token_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "min_claim_period",
+                    "type": "uint32"
+                },
+                {
+                    "name": "unstake_period",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "regnewuser",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "resetuser",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "rmtemplates",
+            "base": "",
+            "fields": [
+                {
+                    "name": "templates",
+                    "type": "template_item[]"
+                }
+            ]
+        },
+        {
+            "name": "setconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "min_claim_period",
+                    "type": "uint32"
+                },
+                {
+                    "name": "unstake_period",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "settoken",
+            "base": "",
+            "fields": [
+                {
+                    "name": "contract",
+                    "type": "name"
+                },
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "template_item",
+            "base": "",
+            "fields": [
+                {
+                    "name": "template_id",
+                    "type": "int32"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "hourly_rate",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "template_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "template_id",
+                    "type": "int32"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "hourly_rate",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "unstake",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                }
+            ]
+        },
+        {
+            "name": "user_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "hourly_rate",
+                    "type": "asset"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "addtemplates",
+            "type": "addtemplates",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "claim",
+            "type": "claim",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "regnewuser",
+            "type": "regnewuser",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "resetuser",
+            "type": "resetuser",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "rmtemplates",
+            "type": "rmtemplates",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setconfig",
+            "type": "setconfig",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "settoken",
+            "type": "settoken",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unstake",
+            "type": "unstake",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "assets",
+            "type": "asset_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "config",
+            "type": "config",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "templates",
+            "type": "template_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "users",
+            "type": "user_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "kv_tables": {},
+    "ricardian_clauses": [],
+    "variants": [],
+    "action_results": []
+}
