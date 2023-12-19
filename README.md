@@ -1,33 +1,30 @@
-# loot by [White Puma](https://puma.red)
+# loot by White Puma 
 
-Smart contract for NFT staking using Atomicassets standard. Based on [ezstake](https://github.com/benjiewheeler/ezstake).
+THIS IS NOT A WORKING CONTRACT 
+it is coded project-specific. We will release in a new repo on cXc when finished. 
 
-This contract is designed to work out-of-the-box, without the need to modify the source code.
+Smart contract NFT staking using Atomicassets standard. Based on [ezstake](https://github.com/benjiewheeler/ezstake).
+
+This contract Modifies [ezstake](https://github.com/benjiewheeler/ezstake) in the following ways. 
+- Removes freezing capability. 
+- - We intend to release a version with freeze capability once the contract is working.
+- Adds a claim multiplier for PUMA of claims and NFTs of template
+
+This contract is designed for White Puma, and is to test the code before a pubic release. 
 
 All the main features are fully configurable by the contract owner.
 
 ## Features
 
-#### For the admin:
-
--   customizable configurations:
-    -   token contract and symbol
-    -   minimum claim period
-    -   unstaking period
-    -   hourly rate per template
-    -   per template control
--   freeze/unfreeze the contract functionalities
--   force reset/unstake user's assets
-
-#### For the user:
+#### For the staker:
 
 -   register
 -   stake/unstake the assets
 -   claim the tokens
 
-## Testing
 
-The contract is fully tested using proton's [VeRT](https://docs.protonchain.com/contract-sdk/testing.html)
+## Testing
+- This contract is untested and meant for personal use of White Puma project. 
 
 -   To build the contract for testing [blanc](https://github.com/haderech/blanc) is required.
 
