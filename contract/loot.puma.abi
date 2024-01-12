@@ -4,12 +4,42 @@
     "types": [],
     "structs": [
         {
-            "name": "addtemplates",
+            "name": "template_item",
             "base": "",
             "fields": [
                 {
-                    "name": "templates",
-                    "type": "template_item[]"
+                    "name": "template_id",
+                    "type": "int32"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "timeunit_rate",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "user_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "timeunit_rate",
+                    "type": "asset"
+                },
+                {
+                    "name": "referrer",
+                    "type": "name"
+                },
+                {
+                    "name": "refscore",
+                    "type": "uint64"
                 }
             ]
         },
@@ -32,16 +62,20 @@
             ]
         },
         {
-            "name": "claim",
+            "name": "template_s",
             "base": "",
             "fields": [
                 {
-                    "name": "user",
+                    "name": "template_id",
+                    "type": "int32"
+                },
+                {
+                    "name": "collection",
                     "type": "name"
                 },
                 {
-                    "name": "asset_ids",
-                    "type": "uint64[]"
+                    "name": "timeunit_rate",
+                    "type": "asset"
                 }
             ]
         },
@@ -49,10 +83,6 @@
             "name": "config",
             "base": "",
             "fields": [
-                {
-                    "name": "is_frozen",
-                    "type": "bool"
-                },
                 {
                     "name": "token_contract",
                     "type": "name"
@@ -68,36 +98,6 @@
                 {
                     "name": "unstake_period",
                     "type": "uint32"
-                }
-            ]
-        },
-        {
-            "name": "regnewuser",
-            "base": "",
-            "fields": [
-                {
-                    "name": "user",
-                    "type": "name"
-                }
-            ]
-        },
-        {
-            "name": "resetuser",
-            "base": "",
-            "fields": [
-                {
-                    "name": "user",
-                    "type": "name"
-                }
-            ]
-        },
-        {
-            "name": "rmtemplates",
-            "base": "",
-            "fields": [
-                {
-                    "name": "templates",
-                    "type": "template_item[]"
                 }
             ]
         },
@@ -130,38 +130,60 @@
             ]
         },
         {
-            "name": "template_item",
+            "name": "addtemplates",
             "base": "",
             "fields": [
                 {
-                    "name": "template_id",
-                    "type": "int32"
-                },
-                {
-                    "name": "collection",
-                    "type": "name"
-                },
-                {
-                    "name": "hourly_rate",
-                    "type": "asset"
+                    "name": "templates",
+                    "type": "template_item[]"
                 }
             ]
         },
         {
-            "name": "template_s",
+            "name": "rmtemplates",
             "base": "",
             "fields": [
                 {
-                    "name": "template_id",
-                    "type": "int32"
-                },
+                    "name": "templates",
+                    "type": "template_item[]"
+                }
+            ]
+        },
+        {
+            "name": "resetuser",
+            "base": "",
+            "fields": [
                 {
-                    "name": "collection",
+                    "name": "user",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "regnewuser",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
                     "type": "name"
                 },
                 {
-                    "name": "hourly_rate",
-                    "type": "asset"
+                    "name": "referrer",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "claim",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
                 }
             ]
         },
@@ -178,71 +200,71 @@
                     "type": "uint64[]"
                 }
             ]
-        },
-        {
-            "name": "user_s",
-            "base": "",
-            "fields": [
-                {
-                    "name": "user",
-                    "type": "name"
-                },
-                {
-                    "name": "hourly_rate",
-                    "type": "asset"
-                }
-            ]
         }
     ],
     "actions": [
         {
-            "name": "addtemplates",
-            "type": "addtemplates",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "claim",
-            "type": "claim",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "regnewuser",
-            "type": "regnewuser",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "resetuser",
-            "type": "resetuser",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "rmtemplates",
-            "type": "rmtemplates",
-            "ricardian_contract": ""
-        },
-        {
             "name": "setconfig",
             "type": "setconfig",
-            "ricardian_contract": ""
+            "ricardian_contract": "Set the token, claim period, and unstake period."
         },
         {
             "name": "settoken",
             "type": "settoken",
-            "ricardian_contract": ""
+            "ricardian_contract": "Set the Token"
+        },
+        {
+            "name": "addtemplates",
+            "type": "addtemplates",
+            "ricardian_contract": "Sets the templates and their rewards."
+        },
+        {
+            "name": "rmtemplates",
+            "type": "rmtemplates",
+            "ricardian_contract": "Remove a template from recieving rewards."
+        },
+        {
+            "name": "resetuser",
+            "type": "resetuser",
+            "ricardian_contract": "Delete a user, reseting refferal score"
+        },
+        {
+            "name": "regnewuser",
+            "type": "regnewuser",
+            "ricardian_contract": "Required registration to use the contract"
+        },
+        {
+            "name": "claim",
+            "type": "claim",
+            "ricardian_contract": "Claim rewards with Tetrahedral bonuses"
         },
         {
             "name": "unstake",
             "type": "unstake",
-            "ricardian_contract": ""
+            "ricardian_contract": "Remove a NFT from the system"
         }
     ],
     "tables": [
         {
+            "name": "users",
+            "type": "user_s",
+            "index_type": "i64",
+            "key_names": ["user"],
+            "key_types": ["uint64"]
+        },
+        {
             "name": "assets",
             "type": "asset_s",
             "index_type": "i64",
-            "key_names": [],
-            "key_types": []
+            "key_names": ["asset_id"],
+            "key_types": ["uint64"]
+        },
+        {
+            "name": "templates",
+            "type": "template_s",
+            "index_type": "i64",
+            "key_names": ["template_id"],
+            "key_types": ["uint64"]
         },
         {
             "name": "config",
@@ -250,23 +272,8 @@
             "index_type": "i64",
             "key_names": [],
             "key_types": []
-        },
-        {
-            "name": "templates",
-            "type": "template_s",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
-        },
-        {
-            "name": "users",
-            "type": "user_s",
-            "index_type": "i64",
-            "key_names": [],
-            "key_types": []
         }
     ],
-    "kv_tables": {},
     "ricardian_clauses": [],
     "variants": [],
     "action_results": []

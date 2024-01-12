@@ -357,7 +357,7 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
     uint64_t refscore = user_itr->refscore;
     uint32_t refscore_lvl;
 
-        // get template table instance
+    // get template table instance
     template_t template_tbl(get_self(), get_self().value);
     // get asset table instance
     asset_t asset_tbl(get_self(), get_self().value);
