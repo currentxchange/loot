@@ -54,40 +54,40 @@ ACTION loot::addtemplates(const int32_t& template_id, const name& collection, co
     // get templates table instance
     template_t template_tbl(get_self(), get_self().value);
 
-    for (const template_item& t : templates) {
-        // check if the hourly rate is valid
-        check(t.timeunit_rate.amount > 0, "timeunit_rate must be positive");
-        check(config.token_symbol == t.timeunit_rate.symbol, "symbol mismatch");
 
-        // check if the template exists in atomicassets and it's valid
-        const auto& aa_template_tbl = atomicassets::get_templates(t.collection);
+    // check if the hourly rate is valid
+    check(t.timeunit_rate.amount > 0, "timeunit_rate must be positive");
+    check(config.token_symbol == t.timeunit_rate.symbol, "symbol mismatch");
 
-        const auto& aa_template_itr = aa_template_tbl.find(uint64_t(t.template_id));
+    // check if the template exists in atomicassets and it's valid
+    const auto& aa_template_tbl = atomicassets::get_templates(t.collection);
 
-        if (aa_template_itr == aa_template_tbl.end()) {
-            check(false, string("template (" + to_string(t.template_id) + ") not found in collection " + t.collection.to_string()).c_str());
-        }
+    const auto& aa_template_itr = aa_template_tbl.find(uint64_t(t.template_id));
 
-        const auto& template_row = template_tbl.find(uint64_t(t.template_id));
-
-        // insert the new template or update it if it already exists
-        if (template_row == template_tbl.end()) {
-            template_tbl.emplace(get_self(), [&](template_s& row) {
-                row.template_id = t.template_id;
-                row.collection = t.collection;
-                row.timeunit_rate = t.timeunit_rate;
-            });
-        } else {
-            template_tbl.modify(template_row, get_self(), [&](template_s& row) {
-                row.template_id = t.template_id;
-                row.collection = t.collection;
-                row.timeunit_rate = t.timeunit_rate;
-            });
-        }
+    if (aa_template_itr == aa_template_tbl.end()) {
+        check(false, string("template (" + to_string(t.template_id) + ") not found in collection " + t.collection.to_string()).c_str());
     }
+
+    const auto& template_row = template_tbl.find(uint64_t(t.template_id));
+
+    // insert the new template or update it if it already exists
+    if (template_row == template_tbl.end()) {
+        template_tbl.emplace(get_self(), [&](template_s& row) {
+            row.template_id = t.template_id;
+            row.collection = t.collection;
+            row.timeunit_rate = t.timeunit_rate;
+        });
+    } else {
+        template_tbl.modify(template_row, get_self(), [&](template_s& row) {
+            row.template_id = t.template_id;
+            row.collection = t.collection;
+            row.timeunit_rate = t.timeunit_rate;
+        });
+    }
+
 }
 
-ACTION loot::rmtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate)
+ACTION loot::rmvtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -98,14 +98,14 @@ ACTION loot::rmtemplates(const int32_t& template_id, const name& collection, con
     // get templates table instance
     template_t template_tbl(get_self(), get_self().value);
 
-    for (const template_item& t : templates) {
-        const auto& template_row = template_tbl.find(uint64_t(t.template_id));
 
-        // erase the template if it already exists
-        if (template_row != template_tbl.end()) {
-            template_tbl.erase(template_row);
-        }
+    const auto& template_row = template_tbl.find(uint64_t(t.template_id));
+
+    // erase the template if it already exists
+    if (template_row != template_tbl.end()) {
+        template_tbl.erase(template_row);
     }
+
 }
 
 ACTION loot::resetuser(const name& user)
