@@ -35,10 +35,10 @@ public:
     ACTION settoken(const name &contract, const symbol &symbol);
 
     // add the staking assets templates
-    ACTION addtemplates(const std::vector<template_item> &templates);
+    ACTION addtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate);
 
     // remove the staking assets templates
-    ACTION rmtemplates(const std::vector<template_item> &templates);
+    ACTION rmtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate);
 
     // unstake all assets & reset a user from the contract
     // used in cases of emergencies such as when a user can't unstake a removed template

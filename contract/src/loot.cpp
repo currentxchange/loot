@@ -43,7 +43,7 @@ ACTION loot::settoken(const name& contract, const symbol& symbol)
     conf_tbl.set(conf, get_self());
 }
 
-ACTION loot::addtemplates(const std::vector<template_item>& templates)
+ACTION loot::addtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
@@ -87,7 +87,7 @@ ACTION loot::addtemplates(const std::vector<template_item>& templates)
     }
 }
 
-ACTION loot::rmtemplates(const std::vector<template_item>& templates)
+ACTION loot::rmtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate)
 {
     // check contract auth
     check(has_auth(get_self()), "this action is admin only");
