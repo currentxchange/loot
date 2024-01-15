@@ -8,8 +8,16 @@
             "base": "",
             "fields": [
                 {
-                    "name": "templates",
-                    "type": "template_item[]"
+                    "name": "template_id",
+                    "type": "int32"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "timeunit_rate",
+                    "type": "asset"
                 }
             ]
         },
@@ -96,8 +104,16 @@
             "base": "",
             "fields": [
                 {
-                    "name": "templates",
-                    "type": "template_item[]"
+                    "name": "template_id",
+                    "type": "int32"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "timeunit_rate",
+                    "type": "asset"
                 }
             ]
         },
@@ -126,24 +142,6 @@
                 {
                     "name": "symbol",
                     "type": "symbol"
-                }
-            ]
-        },
-        {
-            "name": "template_item",
-            "base": "",
-            "fields": [
-                {
-                    "name": "template_id",
-                    "type": "int32"
-                },
-                {
-                    "name": "collection",
-                    "type": "name"
-                },
-                {
-                    "name": "timeunit_rate",
-                    "type": "asset"
                 }
             ]
         },
