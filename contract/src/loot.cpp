@@ -348,6 +348,9 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
     // check if the contract isn't frozen
     const auto& config = check_config();
 
+    // get the min_claim_period from the configuration
+    const uint32_t &epoch = config.min_claim_period;
+
     // get users table instance
     user_t user_tbl(get_self(), get_self().value);
 
@@ -373,31 +376,30 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 
 
     // Calculate the total number of templates staked by the user
-    uint32_t total_templates = 0;
+   // uint32_t total_template_nfts = 0;
     uint32_t template_lvl = 0;
-
+/*/
     auto owner_index = asset_tbl.get_index<"owner"_n>();
     auto owner_itr = owner_index.find(user.value);
     if (owner_itr != owner_index.end())
     {
-        //total_templates = owner_index.rows.at(0).count;
+        //total_template_nfts = owner_index.rows.at(0).count;
         auto it = owner_itr;
             auto end = owner_index.end();
             while (it != end) {
-                total_templates++;
+                // if template is the same template, it's counted 
+
+                
+                total_template_nfts++;
                 it++;
             }
     }
 
-
-    for (size_t i = 0; i < tetrahedral.size(); ++i) {
-        if (total_templates > (tetrahedral[i] + 1)) {
-            template_lvl = i + 1;
-        }
-    }
+/*/
 
 
-    uint32_t multiplier = template_lvl * refscore_lvl;
+
+    uint32_t multiplier = refscore_lvl;
     // --- Sanity check --- //
     check(multiplier < 999, string("You've broken the timespace continuum").c_str());
 
@@ -406,7 +408,8 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
         check(false, string("Wild Puma codenamed " + user.to_string() + " is not registered").c_str());
     }
 
-
+    // Map to keep track of NFT counts for each template
+    std::map<int32_t, uint32_t> template_nft_counts;
 
     asset claimed_amount = asset(0, config.token_symbol);
 
@@ -439,6 +442,20 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 
         if (template_itr == template_tbl.end()) {
             check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
+        } else {
+            // Check if this template ID is already in the map
+            auto map_itr = template_nft_counts.find(template_itr->template_id);
+
+            if (map_itr == template_nft_counts.end()) {
+ 
+                // Template not in the map, add it with a count of 1
+                template_nft_counts[template_itr->template_id] = 1;
+
+                // Count the number of NFTs with the template
+                while (template_itr != template_tbl.end()){
+                    map_itr->second++;
+                }
+            } 
         }
 
         auto period_sec = current_time_point().sec_since_epoch() - asset_itr->last_claim.sec_since_epoch();
@@ -449,7 +466,18 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
         }
 
         // increment the claimed amount + add multiplier 
-        claimed_amount.amount += (template_itr->timeunit_rate.amount * period_sec) / 300 * multiplier;
+
+        for (size_t i = 0; i < tetrahedral.size(); ++i) {
+            if (template_nft_counts[template_itr->template_id] > (tetrahedral[i] + 1)) {
+                template_lvl = i + 1;
+            }
+        }
+
+        multiplier = multiplier * template_lvl;
+
+        // Set multiplier = multiplier * number of NFTs of that template
+
+        claimed_amount.amount += ((template_itr->timeunit_rate.amount * period_sec) / epoch) * multiplier;
 
         // reset the last claim time
         asset_tbl.modify(asset_itr, user, [&](asset_s& row) { row.last_claim = current_time_point(); });
@@ -458,9 +486,27 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
     // fail if the reward is 0
     check(claimed_amount.amount > 0, "nothing to claim");
 
+    // Count the number of templates with more than one NFT
+    uint32_t templates_with_multiple_nfts = 0;
+    for (const auto& pair : template_nft_counts) {
+        if (pair.second > 1) {
+            templates_with_multiple_nfts++;
+        }
+    }
+
+    //const string& memo = to_string("");
+    string memo;
+    
+    if (templates_with_multiple_nfts > 1){
+        memo = string("Loot! " + to_string(refscore) + " referrals, " + to_string(refscore_lvl) + "X bonus, and " + to_string(template_lvl) + "X for # staked, totaling " + to_string(multiplier) + "X!! via lamanadapuma collection. Seek el White Puma: https://puma.red");
+    } else {
+        memo = string("Loot! " + to_string(refscore) + " referrals, " + to_string(refscore_lvl) + "X bonus, and " + to_string(templates_with_multiple_nfts) + " templates with bonuses! via lamanadapuma collection. Seek el White Puma: https://puma.red");
+
+    } 
+
     // send the tokens
     action(permission_level { get_self(), name("active") }, config.token_contract, name("transfer"),
-        make_tuple(get_self(), user, claimed_amount, string("Loot reward with referral bonus multiplier of " + to_string(refscore) + "via lamanadapuma collection. Seek el White Puma: https://puma.red")))
+        make_tuple(get_self(), user, claimed_amount, memo))
         .send();
 }
 
