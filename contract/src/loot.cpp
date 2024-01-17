@@ -58,7 +58,7 @@ ACTION loot::addtemplates(const int32_t& template_id, const name& collection, co
     const auto& aa_template_itr = aa_template_tbl.find(uint64_t(template_id));
 
     if (aa_template_itr == aa_template_tbl.end()) {
-        check(false, string("template (" + to_string(template_id) + ") not found in collection " + collection.to_string()).c_str());
+        check(false, string("Template id: " + to_string(template_id) + " not found in collection " + collection.to_string()).c_str());
     }
 
     const auto& template_row = template_tbl.find(uint64_t(template_id));
@@ -103,7 +103,7 @@ ACTION loot:: rmtemplates(const int32_t& template_id, const name& collection, co
 ACTION loot::resetuser(const name& user)
 {
     // --- Authentication Check --- // 
-    check(has_auth(get_self()), "this action is admin only");
+     check(has_auth(get_self()) || has_auth(user), "Missing authorization by admin or the user themselves.");
 
     // --- Import config --- //
     const auto& config = check_config();
@@ -145,7 +145,7 @@ ACTION loot::regnewuser(const name& user, const name& referrer ) {
 
     // --- Authentication Check --- // 
     if (!has_auth(user)) {
-        check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
+        check(false, string("User " + user.to_string() + " has not authorized this action.").c_str());
     }
 
     // --- Import config --- //
@@ -166,9 +166,7 @@ ACTION loot::regnewuser(const name& user, const name& referrer ) {
         if (referrer_itr == user_tbl.end()) {
 
             // --- Check user exists --- //
-            check(is_account(referrer), "Referring user can't be found");
-
-
+            check(is_account(referrer), "Referring user can't be found.");
 
             user_tbl.emplace(get_self(), [&](auto& row) {
                 row.user = referrer;
@@ -222,7 +220,7 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 {
     // --- Authentication Check --- //
     if (!has_auth(user)) {
-        check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
+        check(false, string("User " + user.to_string() + " has not authorized this action").c_str());
     }
 
     // --- Import config --- //
@@ -274,25 +272,25 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 
         // --- Check if the asset is staked --- //
         if (asset_itr == asset_tbl.end()) {
-            check(false, string("puma asset (" + to_string(asset_id) + ") is not staked").c_str());
+            check(false, string("NFT (" + to_string(asset_id) + ") is not staked.").c_str());
         }
 
         // --- Check if the asset belongs to the user --- //
         if (asset_itr->owner != user) {
-            check(false, string("puma asset  (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
+            check(false, string("NFT  (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
         }
 
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);// Find the asset data, get the template id 
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("Puma NFT id: " + to_string(asset_id) + " does not exist").c_str());
+            check(false, string("NFT id: " + to_string(asset_id) + " does not exist.").c_str());
         }
 
         // -- Check if the asset's template is stakeable --- //
         const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);
 
         if (template_itr == template_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
+            check(false, string("NFT id: " + to_string(asset_id) + " is not stakeable. Ask the collection owner to add the template.").c_str());
         } else {
             // --- Check if this template ID is already in the map --- //
             auto map_itr = template_nft_counts.find(template_itr->template_id);
@@ -309,7 +307,7 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 
         // --- Check if the asset is not in cooldown --- //
         if (period_sec < config.min_claim_period) {
-            check(false, string("asset (" + to_string(asset_id) + ") isn't ripe to collect. 5 minutes between claims.").c_str());
+            check(false, string("NFT id: " + to_string(asset_id) + ") isn't ripe to collect. 5 minutes between claims.").c_str());
         }
 
         // increment the claimed amount + add multiplier 
@@ -325,7 +323,7 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
         asset_tbl.modify(asset_itr, user, [&](asset_s& row) { row.last_claim = current_time_point(); }); // Set the last claim time
     }
 
-    check(claimed_amount.amount > 0, "nothing to claim");// Fail if the reward is 0
+    check(claimed_amount.amount > 0, "No rewards to claim. Wait a bit.");// Fail if the reward is 0
 
     // --- Add claimed amount to stacked --- // 
     user_tbl.modify(user_itr, same_payer, [&](auto& row) { row.stacked += claimed_amount; });
@@ -385,31 +383,31 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
     for (const uint64_t& asset_id : asset_ids) {
         const auto& asset_itr = asset_tbl.find(asset_id);// Find the asset data, get the template id 
 
-        if (asset_itr == asset_tbl.end()) {// check if the asset is staked
-            check(false, string("asset (" + to_string(asset_id) + ") is not staked").c_str());
+        if (asset_itr == asset_tbl.end()) {// Check if the asset is staked
+            check(false, string("NFT id: " + to_string(asset_id) + " is not staked").c_str());
         }
 
-        if (asset_itr->owner != user) {// check if the asset belongs to the user
-            check(false, string("asset (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
+        if (asset_itr->owner != user) {// Check if the asset belongs to the user
+            check(false, string("NFT id: " + to_string(asset_id) + " does not belong to " + user.to_string()).c_str());
         }
 
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);// Find the asset data, get the template id 
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
+            check(false, string("NFT id: " + to_string(asset_id) + " does not exist").c_str());
         }
 
-        const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);// check if the asset's template is stakeable
+        const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);// Check if the asset's template is stakeable
 
         if (template_itr == template_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
+            check(false, string("NFT id: " + to_string(asset_id) + " is not stakeable").c_str());
         }
 
         auto period_sec = current_time_point().sec_since_epoch() - asset_itr->last_claim.sec_since_epoch();
 
         // check if the asset can be unstaked
         if (period_sec < config.unstake_period) {
-            check(false, string("asset (" + to_string(asset_id) + ") cannot be unstaked yet").c_str());
+            check(false, string("NFT id: " + to_string(asset_id) + " cannot be unstaked yet").c_str());
         }
 
         asset_tbl.erase(asset_itr);// delete the NFTs
@@ -452,22 +450,21 @@ loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
     asset added_rate = asset(0, config.token_symbol);
 
     for (const uint64_t& asset_id : asset_ids) {
-        // Find the asset data, get the template id 
+        // --- Get the Template ID --- //
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
+            check(false, string("NFT id: " + to_string(asset_id) + " does not exist").c_str());
         }
 
-        // check if the asset's template is stakeable
+        // --- Check the template is stakeable --- //
         const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);
 
         if (template_itr == template_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
+            check(false, string("NFT id: " + to_string(asset_id) + " is not stakeable. Collection owner must add it first.").c_str());
         }
 
-
-        // save the asset
+        // --- Store the asset --- //
         asset_tbl.emplace(get_self(), [&](asset_s& row) {
             row.asset_id = asset_id;
             row.owner = from;
