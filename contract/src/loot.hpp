@@ -13,56 +13,54 @@ CONTRACT loot : public contract
 public:
     using contract::contract;
 
-    // ------------ structs ------------
+    // === Data Structures === //
 
-    // public template struct for the addtemplates/rmtemplates actions
+    // --- Template struct for the addtemplates/rmtemplates actions --- //
     struct template_item
     {
-        // id of the template (from the atomicassets)
+        // --- Atomicassets Template ID --- //
         int32_t template_id;
-        // name of the collection of this template
+        // --- Collection Template Belongs to -- //
         name collection;
-        // the staking power provided by this template
+        // --- Base amount of token paid per Time Unit --- // 
         asset timeunit_rate;
     };
 
-    // ------------ admin actions ------------
+    // === Admin Actions === //
 
-    // set the contract config
+    // --- Set the contract configuration --- //
     ACTION setconfig(const uint32_t &min_claim_period, const uint32_t &unstake_period);
 
-    // set the contract token config
+    // --- Set the reward token --- //
     ACTION settoken(const name &contract, const symbol &symbol);
 
-    // add the staking assets templates
+    // --- Add stakable NFT templates --- //
     ACTION addtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate);
 
-    // remove the staking assets templates
+    // --- Remove stakable NFT templates --- //
     ACTION rmtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate);
 
-    // unstake all assets & reset a user from the contract
-    // used in cases of emergencies such as when a user can't unstake a removed template
-    ACTION resetuser(const name &user);
+    // --- Unstake all assets & reset a user from the contract --- //
+    ACTION resetuser(const name &user);// Used to remove bad actor, and if a user can't unstake a removed template 
 
-    // ------------ user actions ------------
+    // === User Actions === //
 
-    // register a new user
+    // --- Register a user (needed to claim) --- //
     ACTION regnewuser(const name &user, const name &referrer = ""_n);
 
-    // claim the generated tokens
+    // -- Claim the reward tokens --- //
     ACTION claim(const name &user, const vector<uint64_t> &asset_ids);
 
-    // unstake the user's assets
+    // --- Unstake NFTs --- //
     ACTION unstake(const name &user, const vector<uint64_t> &asset_ids);
 
-    // ------------ notify handlers ------------
+    // === Notify Handlers === //
 
-    // receiver assets from the user
+    // --- Recieves NFTs from the user --- //
     void receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo);
 
 private:
-    // token stat struct
-    // taken from the reference eosio.token contract
+    // --- Token stat struct from eosio.token --- //
     struct stat_s
     {
         asset supply;
@@ -72,65 +70,55 @@ private:
         uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
 
+    // --- Registered Users + Referrers --- // 
     TABLE user_s
     {
-        name user;                        // Name of the user
-        asset timeunit_rate;                // The total timeunit_rate this user has
-        name referrer;                    // Name of the referrer (if any)
+        name user; // Name of the user
+        name referrer; // Name of the referrer (if any)
+        asset stacked;
         uint64_t refscore = 0; // Number of referrals made by the user
 
         auto primary_key() const { return user.value; }
-        // Secondary index to sort/query the users by their rate
-        uint64_t by_rate() const { return timeunit_rate.amount; }
-        // Secondary index to sort/query the users by their number of referrals
-        uint64_t by_referrals() const { return refscore; }
+        uint64_t by_stacked() const { return stacked.amount; }
+        uint64_t by_referrals() const { return refscore; } // Secondary index to sort/query the users by their number of referrals
     };
 
+    // --- NFTs + Claims --- // 
     TABLE asset_s
     {
-        // id of the assets (from the atomicassets)
-        uint64_t asset_id;
-        // name of the owner of the asset
+        uint64_t asset_id; // Atomicassets id of the NFTs
         name owner;
-        // timestamp of the last claim
         time_point_sec last_claim;
 
         auto primary_key() const { return asset_id; }
-        // secondary index to sort/query assets by their owner
-        uint64_t by_owner() const { return owner.value; }
+        uint64_t by_owner() const { return owner.value; } // Sort assets by owner
     };
 
+    // --- Stakeable NFTs --- // 
     TABLE template_s
     {
-        // id of the template (from the atomicassets)
         int32_t template_id;
-        // name of the collection of this template
         name collection;
-        // the staking power provided by this template
-        asset timeunit_rate;
-
+        asset timeunit_rate; // Amount of token given 
         auto primary_key() const { return uint64_t(template_id); }
     };
 
+    // --- Reward Token --- // 
     TABLE config
     {
-        // the name of the token contract
         name token_contract = name("moneda.puma");
-        // the name of the token symbol
         symbol token_symbol = symbol(symbol_code("PUMA"), 8);
-        // the minimum time (in seconds) that a user is required to wait between each claim action
-        uint32_t min_claim_period = 300;
-        // the minimum time (in seconds) that a user is required to wait until they can unstake their assets
-        uint32_t unstake_period = 300;
+        uint32_t min_claim_period = 300;// Minimum wait (in seconds) for claiming rewards
+        uint32_t unstake_period = 300;// Minimum wait (in seconds) for claiming rewards
     };
 
-    // token stat table definition
+
     typedef multi_index<name("stat"), stat_s> stat_t;
 
-typedef multi_index<name("users"), user_s,
-    indexed_by<name("rate"), const_mem_fun<user_s, uint64_t, &user_s::by_rate>>,
-    indexed_by<name("referrals"), const_mem_fun<user_s, uint64_t, &user_s::by_referrals>>
-> user_t;
+    typedef multi_index<name("users"), user_s,
+        indexed_by<name("stacked"), const_mem_fun<user_s, uint64_t, &user_s::by_stacked>>,
+        indexed_by<name("referrals"), const_mem_fun<user_s, uint64_t, &user_s::by_referrals>>
+    > user_t;
 
     typedef multi_index<name("assets"), asset_s,
                         indexed_by<name("owner"), const_mem_fun<asset_s, uint64_t, &asset_s::by_owner>>>
@@ -139,20 +127,15 @@ typedef multi_index<name("users"), user_s,
     typedef multi_index<name("templates"), template_s> template_t;
     typedef singleton<name("config"), config> config_t;
 
-    // Utilities
+    // === Contract Utilities === //
 
-    // check if the contract is initialized
+    // --- Returns the config object for use withing actions --- //
     config check_config()
     {
-        // get config table
-        config_t conf_tbl(get_self(), get_self().value);
+        config_t conf_tbl(get_self(), get_self().value);// Get config table
+        check(conf_tbl.exists(), "The contract is not initialized yet"); // Check if a config exists
+        const auto &conf = conf_tbl.get(); // Get  current config
 
-        // check if a config exists
-        check(conf_tbl.exists(), "The contract is not initialized yet");
-
-        // get  current config
-        const auto &conf = conf_tbl.get();
-
-        return conf;
+        return conf; // Returns the config table for the 
     }
 };

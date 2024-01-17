@@ -186,12 +186,12 @@
                     "type": "name"
                 },
                 {
-                    "name": "timeunit_rate",
-                    "type": "asset"
-                },
-                {
                     "name": "referrer",
                     "type": "name"
+                },
+                {
+                    "name": "stacked",
+                    "type": "asset"
                 },
                 {
                     "name": "refscore",

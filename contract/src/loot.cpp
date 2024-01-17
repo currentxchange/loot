@@ -1,62 +1,55 @@
 #include "loot.hpp"
-// (300, 300)
+
 ACTION loot::setconfig(const uint32_t& min_claim_period, const uint32_t& unstake_period)
 {
-    // check contract auth
+    // --- Authentication Check --- // 
     check(has_auth(get_self()), "this action is admin only");
 
-    // get config table instance
-    config_t conf_tbl(get_self(), get_self().value);
-
-    // get/create current config
-    auto conf = conf_tbl.get_or_default(config {});
+    config_t conf_tbl(get_self(), get_self().value);// Get config table 
+    auto conf = conf_tbl.get_or_default(config {});// get/create current config
 
     conf.min_claim_period = min_claim_period;
     conf.unstake_period = unstake_period;
 
-    // save the new config
+    // --- Save Configuration -- //
     conf_tbl.set(conf, get_self());
 }
 
 ACTION loot::settoken(const name& contract, const symbol& symbol)
 {
-    // check contract auth
-    check(has_auth(get_self()), "this action is admin only");
+    // --- Authentication Check --- // 
+    check(has_auth(get_self()), "This action is admin only");
 
-    // check if the contract exists
-    check(is_account(contract), "contract account does not exist");
+    // --- Check contract at address --- //
+    check(is_account(contract), "Contract account does not exist");
 
-    // check if the contract has a token and is valid
+    // --- Basic Token Check --- //
     stat_t stat(contract, symbol.code().raw());
     stat.require_find(symbol.code().raw(), "token symbol does not exist");
 
-    // get config table instance
-    config_t conf_tbl(get_self(), get_self().value);
+    config_t conf_tbl(get_self(), get_self().value);// Get config table 
 
-    // get/create current config
-    auto conf = conf_tbl.get_or_default(config {});
+    auto conf = conf_tbl.get_or_default(config {}); // Get/create current config
 
     conf.token_contract = contract;
     conf.token_symbol = symbol;
 
-    // save the new config
+    // --- Save the new config --- //
     conf_tbl.set(conf, get_self());
 }
 
 ACTION loot::addtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate)
 {
-    // check contract auth
+    // --- Authentication Check --- // 
     check(has_auth(get_self()), "this action is admin only");
 
-    // check if the contract isn't frozen
+    // --- Import config --- //
     const auto& config = check_config();
 
-    // get templates table instance
+    // --- Get templates table  --- //
     template_t template_tbl(get_self(), get_self().value);
-
-
-    // check if the hourly rate is valid
-    check(timeunit_rate.amount > 0, "timeunit_rate must be positive");
+    
+    check(timeunit_rate.amount > 0, "timeunit_rate must be positive");// check if the hourly rate is valid
     check(config.token_symbol == timeunit_rate.symbol, "symbol mismatch");
 
     // check if the template exists in atomicassets and it's valid
@@ -70,7 +63,7 @@ ACTION loot::addtemplates(const int32_t& template_id, const name& collection, co
 
     const auto& template_row = template_tbl.find(uint64_t(template_id));
 
-    // insert the new template or update it if it already exists
+    // --- Upsert the template --- //
     if (template_row == template_tbl.end()) {
         template_tbl.emplace(get_self(), [&](template_s& row) {
             row.template_id = template_id;
@@ -89,19 +82,18 @@ ACTION loot::addtemplates(const int32_t& template_id, const name& collection, co
 
 ACTION loot:: rmtemplates(const int32_t& template_id, const name& collection, const asset& timeunit_rate)
 {
-    // check contract auth
+    // --- Authentication Check --- // 
     check(has_auth(get_self()), "this action is admin only");
 
-    // check if the contract isn't frozen
+    // --- Import config --- //
     const auto& config = check_config();
 
-    // get templates table instance
+    // --- Get templates table  --- //
     template_t template_tbl(get_self(), get_self().value);
-
 
     const auto& template_row = template_tbl.find(uint64_t(template_id));
 
-    // erase the template if it already exists
+    // --- Erase the Template  --- //
     if (template_row != template_tbl.end()) {
         template_tbl.erase(template_row);
     }
@@ -110,108 +102,84 @@ ACTION loot:: rmtemplates(const int32_t& template_id, const name& collection, co
 
 ACTION loot::resetuser(const name& user)
 {
-    // check contract auth
+    // --- Authentication Check --- // 
     check(has_auth(get_self()), "this action is admin only");
 
-    // check if the contract isn't frozen
+    // --- Import config --- //
     const auto& config = check_config();
 
-    // get users table instance
-    user_t user_tbl(get_self(), get_self().value);
+    user_t user_tbl(get_self(), get_self().value);// Get users table
 
     const auto& user_itr = user_tbl.find(user.value);
 
-    // erase the user if the it is already registered
+    // --- Delete the User --- //
     if (user_itr != user_tbl.end()) {
         user_tbl.erase(user_itr);
     }
 
-    // get asset table instance
+    // --- Get asset table --- //
     asset_t asset_tbl(get_self(), get_self().value);
 
     vector<uint64_t> staked_assets = {};
 
-    // get the secondary index
-    //auto owner_idx = asset_tbl.get_index<name("owner")>();
+    // --- Get NFTs by owner --- //
     auto owner_idx = asset_tbl.get_index<"owner"_n>();
     auto owner_itr = owner_idx.lower_bound(user.value);
 
-    // iterate through the rows and erase them
+    // --- Erase NFTs from table --- //
     while (owner_itr != owner_idx.end() && owner_itr->owner == user) {
         staked_assets.push_back(owner_itr->asset_id);
         owner_idx.erase(owner_itr++);
     }
 
-    // return the assets back to the user if there's any
+    // --- Return NFTs to owner --- //
     if (staked_assets.size() > 0) {
-        // send the assets back
         action(permission_level { get_self(), name("active") }, atomicassets::ATOMICASSETS_ACCOUNT, name("transfer"),
-            make_tuple(get_self(), user, staked_assets, string("Unstaking")))
+            make_tuple(get_self(), user, staked_assets, string("Returning your NFTs, stake more anytime")))
             .send();
     }
 }
 
-/*/
-ACTION loot::regnewuser(const name& user)
-{
-    // check user auth
-    if (!has_auth(user)) {
-        check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
-    }
-
-    // check if the contract isn't frozen
-    const auto& config = check_config();
-
-    // get users table instance
-    user_t user_tbl(get_self(), get_self().value);
-
-    const auto& user_itr = user_tbl.find(user.value);
-
-    // check if the user isn't already registered
-    if (user_itr != user_tbl.end()) {
-        check(false, string("user " + user.to_string() + " is already registered").c_str());
-    }
-
-    user_tbl.emplace(user, [&](user_s& row) {
-        row.user = user;
-        row.timeunit_rate = asset(0, config.token_symbol);
-    });
-}
-/*/
 
 ACTION loot::regnewuser(const name& user, const name& referrer ) {
-    // Check user auth
+
+    // --- Authentication Check --- // 
     if (!has_auth(user)) {
         check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
     }
 
-    // Check if the contract isn't frozen
+    // --- Import config --- //
     const auto& config = check_config();
+    asset stacked = asset(0, config.token_symbol);
 
-    // Get users table instance
-    user_t user_tbl(get_self(), get_self().value);
+    user_t user_tbl(get_self(), get_self().value); // Get users table 
 
-    // Check if the user isn't already registered
+    // --- See if user is already registered --- //
     auto user_itr = user_tbl.find(user.value);
-    check(user_itr == user_tbl.end(), string("user " + user.to_string() + " is already registered").c_str());
+    check(user_itr == user_tbl.end(), string("Looks like " + user.to_string() + " is already registered").c_str());
 
-    // Handle referrer
+    // --- Handle referrer --- //
     if (referrer != ""_n && referrer != user) {
-        // Check if the referrer is already registered
-        auto referrer_itr = user_tbl.find(referrer.value);
 
-        // If the referrer is not registered, register the referrer
+        // --- If the referrer is not registered, register them --- //
+        auto referrer_itr = user_tbl.find(referrer.value);
         if (referrer_itr == user_tbl.end()) {
+
+            // --- Check user exists --- //
+            check(is_account(referrer), "Referring user can't be found");
+
+
+
             user_tbl.emplace(get_self(), [&](auto& row) {
                 row.user = referrer;
-                row.timeunit_rate = asset(0, config.token_symbol);
+                row.stacked = stacked;
                 row.referrer = ""_n; // No referrer for the referrer
-                row.refscore = 0;
+                row.refscore = 1;
             });
         }
     }
 
-    // --- Bonus if you are refered --- //
+        // --- Bonus if you are refered --- //
         uint32_t newscore;
         if (referrer != ""_n && referrer != user) {
             newscore = 1;
@@ -219,22 +187,22 @@ ACTION loot::regnewuser(const name& user, const name& referrer ) {
             newscore = 0;
         }
 
-    // Register the new user
+    // --- Register the new user --- //
     user_tbl.emplace(get_self(), [&](auto& row) {
         row.user = user;
-        row.timeunit_rate = asset(0, config.token_symbol);
+        row.stacked = stacked;
         row.referrer = (referrer != user) ? referrer : ""_n;
         row.refscore = newscore;
     });
 
-    // Increment referrer's and referrer's referrer score
+    // --- Handle ref score --- //
     if (referrer != ""_n && referrer != user) {
         auto referrer_itr = user_tbl.find(referrer.value);
         if (referrer_itr != user_tbl.end()) {
             user_tbl.modify(referrer_itr, get_self(), [&](auto& row) {
                 row.refscore++;
 
-                // Increment the referrer's referrer score if exists
+                // --- Increment the referrer's referrer score if exists
                 if (row.referrer != ""_n) {
                     auto ref_of_referrer_itr = user_tbl.find(row.referrer.value);
                     if (ref_of_referrer_itr != user_tbl.end()) {
@@ -249,110 +217,19 @@ ACTION loot::regnewuser(const name& user, const name& referrer ) {
 }
 
 
-/*/
+
 ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 {
-    // check user auth
+    // --- Authentication Check --- //
     if (!has_auth(user)) {
         check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
     }
 
-    // check if the contract isn't frozen
+    // --- Import config --- //
     const auto& config = check_config();
+    const uint32_t &epoch = config.min_claim_period;// Get the min wait period from config 
 
-    // get users table instance
-    user_t user_tbl(get_self(), get_self().value);
-
-    const auto& user_itr = user_tbl.find(user.value);
-
-    // check if the user is registered
-    if (user_itr == user_tbl.end()) {
-        check(false, string("user " + user.to_string() + " is not registered").c_str());
-    }
-
-    // get template table instance
-    template_t template_tbl(get_self(), get_self().value);
-    // get asset table instance
-    asset_t asset_tbl(get_self(), get_self().value);
-
-    asset claimed_amount = asset(0, config.token_symbol);
-
-    // get the assets table (scoped to the contract)
-    const auto& aa_asset_tbl = atomicassets::get_assets(get_self());
-
-    for (const uint64_t& asset_id : asset_ids) {
-        // find the asset data, to get the template id from it
-        const auto& asset_itr = asset_tbl.find(asset_id);
-
-        // check if the asset is staked
-        if (asset_itr == asset_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") is not staked").c_str());
-        }
-
-        // check if the asset belongs to the user
-        if (asset_itr->owner != user) {
-            check(false, string("asset (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
-        }
-
-        // find the asset data, to get the template id from it
-        const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
-
-        if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
-        }
-
-        // check if the asset's template is stakeable
-        const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);
-
-        if (template_itr == template_tbl.end()) {
-            check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
-        }
-
-        auto period_sec = current_time_point().sec_since_epoch() - asset_itr->last_claim.sec_since_epoch();
-
-        // check if the asset is not in cooldown
-        if (period_sec < config.min_claim_period) {
-            check(false, string("asset (" + to_string(asset_id) + ") is still in cooldown").c_str());
-        }
-
-        // increment the claimed amount
-        claimed_amount.amount += (template_itr->timeunit_rate.amount * period_sec) / 300;
-
-        // reset the last claim time
-        asset_tbl.modify(asset_itr, user, [&](asset_s& row) { row.last_claim = current_time_point(); });
-    }
-
-    // fail if the reward is 0
-    check(claimed_amount.amount > 0, "nothing to claim");
-
-    // send the tokens
-    action(permission_level { get_self(), name("active") }, config.token_contract, name("transfer"),
-        make_tuple(get_self(), user, claimed_amount, string("Staking reward")))
-        .send();
-}
-/*/
-
-//
-
-
-
-
-
-ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
-{
-    // check user auth
-    if (!has_auth(user)) {
-        check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
-    }
-
-    // check if the contract isn't frozen
-    const auto& config = check_config();
-
-    // get the min_claim_period from the configuration
-    const uint32_t &epoch = config.min_claim_period;
-
-    // get users table instance
-    user_t user_tbl(get_self(), get_self().value);
+    user_t user_tbl(get_self(), get_self().value);// Get users table
 
     const auto& user_itr = user_tbl.find(user.value);
     
@@ -360,10 +237,9 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
     uint64_t refscore = user_itr->refscore;
     uint32_t refscore_lvl;
 
-    // get template table instance
-    template_t template_tbl(get_self(), get_self().value);
-    // get asset table instance
-    asset_t asset_tbl(get_self(), get_self().value);
+    
+    template_t template_tbl(get_self(), get_self().value);// get template table
+    asset_t asset_tbl(get_self(), get_self().value);// get asset table instance
 
 
     std::vector<uint64_t> tetrahedral = {1, 4, 10, 20, 35, 56, 84, 120, 165, 220, 286, 364, 455, 560, 680, 816, 969, 1140, 1330, 1540, 1771, 2024, 2300, 2600, 2925, 3276, 3654, 4060, 4495, 4960, 5456, 5984, 6545, 7140, 7770, 8436, 9139, 9880, 10660, 11480, 12341, 13244, 14190, 15180, 999999999};
@@ -374,85 +250,56 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
         }
     }
 
-
-    // Calculate the total number of templates staked by the user
-   // uint32_t total_template_nfts = 0;
+    // --- Calculate the total number of templates staked by the user --- //
     uint32_t template_lvl = 0;
-/*/
-    auto owner_index = asset_tbl.get_index<"owner"_n>();
-    auto owner_itr = owner_index.find(user.value);
-    if (owner_itr != owner_index.end())
-    {
-        //total_template_nfts = owner_index.rows.at(0).count;
-        auto it = owner_itr;
-            auto end = owner_index.end();
-            while (it != end) {
-                // if template is the same template, it's counted 
-
-                
-                total_template_nfts++;
-                it++;
-            }
-    }
-
-/*/
-
-
-
     uint32_t multiplier = refscore_lvl;
+
     // --- Sanity check --- //
     check(multiplier < 999, string("You've broken the timespace continuum").c_str());
 
-    // check if the user is registered
+    // --- Check if the user is registered --- //
     if (user_itr == user_tbl.end()) {
         check(false, string("Wild Puma codenamed " + user.to_string() + " is not registered").c_str());
     }
 
-    // Map to keep track of NFT counts for each template
+    // --- Keep track of NFT counts for each template --- //
     std::map<int32_t, uint32_t> template_nft_counts;
 
     asset claimed_amount = asset(0, config.token_symbol);
 
-    // get the assets table (scoped to the contract)
-    const auto& aa_asset_tbl = atomicassets::get_assets(get_self());
+    const auto& aa_asset_tbl = atomicassets::get_assets(get_self());// get the assets table (scoped to the contract)
 
     for (const uint64_t& asset_id : asset_ids) {
-        // find the asset data, to get the template id from it
-        const auto& asset_itr = asset_tbl.find(asset_id);
+        const auto& asset_itr = asset_tbl.find(asset_id);// Find the asset data, get the template id
 
-        // check if the asset is staked
+        // --- Check if the asset is staked --- //
         if (asset_itr == asset_tbl.end()) {
             check(false, string("puma asset (" + to_string(asset_id) + ") is not staked").c_str());
         }
 
-        // check if the asset belongs to the user
+        // --- Check if the asset belongs to the user --- //
         if (asset_itr->owner != user) {
             check(false, string("puma asset  (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
         }
 
-        // find the asset data, to get the template id from it
-        const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
+        const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);// Find the asset data, get the template id 
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("puma asset  (" + to_string(asset_id) + ") does not exist").c_str());
+            check(false, string("Puma NFT id: " + to_string(asset_id) + " does not exist").c_str());
         }
 
-        // check if the asset's template is stakeable
+        // -- Check if the asset's template is stakeable --- //
         const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);
 
         if (template_itr == template_tbl.end()) {
             check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
         } else {
-            // Check if this template ID is already in the map
+            // --- Check if this template ID is already in the map --- //
             auto map_itr = template_nft_counts.find(template_itr->template_id);
 
             if (map_itr == template_nft_counts.end()) {
- 
-                // Template not in the map, add it with a count of 1
-                template_nft_counts[template_itr->template_id] = 1;
-
-                // Count the number of NFTs with the template
-                while (template_itr != template_tbl.end()){
+                template_nft_counts[template_itr->template_id] = 1; // Template not in the map, add it with a count of 1
+                while (template_itr != template_tbl.end()){// Count the number of NFTs with the template
                     map_itr->second++;
                 }
             } 
@@ -460,33 +307,30 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 
         auto period_sec = current_time_point().sec_since_epoch() - asset_itr->last_claim.sec_since_epoch();
 
-        // check if the asset is not in cooldown
+        // --- Check if the asset is not in cooldown --- //
         if (period_sec < config.min_claim_period) {
             check(false, string("asset (" + to_string(asset_id) + ") isn't ripe to collect. 5 minutes between claims.").c_str());
         }
 
         // increment the claimed amount + add multiplier 
-
         for (size_t i = 0; i < tetrahedral.size(); ++i) {
             if (template_nft_counts[template_itr->template_id] > (tetrahedral[i] + 1)) {
                 template_lvl = i + 1;
             }
         }
 
+        // --- Set multiplier = multiplier * number of NFTs of that template --- //
         multiplier = multiplier * template_lvl;
-
-        // Set multiplier = multiplier * number of NFTs of that template
-
         claimed_amount.amount += ((template_itr->timeunit_rate.amount * period_sec) / epoch) * multiplier;
-
-        // reset the last claim time
-        asset_tbl.modify(asset_itr, user, [&](asset_s& row) { row.last_claim = current_time_point(); });
+        asset_tbl.modify(asset_itr, user, [&](asset_s& row) { row.last_claim = current_time_point(); }); // Set the last claim time
     }
 
-    // fail if the reward is 0
-    check(claimed_amount.amount > 0, "nothing to claim");
+    check(claimed_amount.amount > 0, "nothing to claim");// Fail if the reward is 0
 
-    // Count the number of templates with more than one NFT
+    // --- Add claimed amount to stacked --- // 
+    user_tbl.modify(user_itr, same_payer, [&](auto& row) { row.stacked += claimed_amount; });
+
+    // --- Count the number of templates with more than one NFT --- //
     uint32_t templates_with_multiple_nfts = 0;
     for (const auto& pair : template_nft_counts) {
         if (pair.second > 1) {
@@ -494,9 +338,9 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
         }
     }
 
-    //const string& memo = to_string("");
-    string memo;
-    
+
+    // --- Make memo different if user claims rewards from more than one template --- //
+    string memo; 
     if (templates_with_multiple_nfts > 1){
         memo = string("Loot! " + to_string(refscore) + " referrals, " + to_string(refscore_lvl) + "X bonus, and " + to_string(template_lvl) + "X for # staked, totaling " + to_string(multiplier) + "X!! via lamanadapuma collection. Seek el White Puma: https://puma.red");
     } else {
@@ -504,7 +348,7 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 
     } 
 
-    // send the tokens
+    // --- Send the reward tokens --- //
     action(permission_level { get_self(), name("active") }, config.token_contract, name("transfer"),
         make_tuple(get_self(), user, claimed_amount, memo))
         .send();
@@ -513,60 +357,49 @@ ACTION loot::claim(const name& user, const vector<uint64_t>& asset_ids)
 
 ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
 {
-    // check user auth
+    // --- Authentication Check --- //
     if (!has_auth(user)) {
         check(false, string("user " + user.to_string() + " has not authorized this action").c_str());
     }
 
-    // check if there's any requested asset_ids at all
-    check(asset_ids.size() > 0, "must unstake at least 1 asset");
+    check(asset_ids.size() > 0, "Must unstake at least 1 asset");
 
-    // check if the contract isn't frozen
+    // --- Import config --- //
     const auto& config = check_config();
 
-    // get users table instance
-    user_t user_tbl(get_self(), get_self().value);
-
+    // --- Handle user --- //
+    user_t user_tbl(get_self(), get_self().value);// get users table
     const auto& user_itr = user_tbl.find(user.value);
-
-    // check if the user is registered
-    if (user_itr == user_tbl.end()) {
+    
+    if (user_itr == user_tbl.end()) {// Check the user is registered
         check(false, string("user " + user.to_string() + " is not registered").c_str());
     }
+    
+    template_t template_tbl(get_self(), get_self().value);// get template table 
+  
+    asset_t asset_tbl(get_self(), get_self().value);// get asset table 
 
-    // get template table instance
-    template_t template_tbl(get_self(), get_self().value);
-    // get asset table instance
-    asset_t asset_tbl(get_self(), get_self().value);
+    const auto& aa_asset_tbl = atomicassets::get_assets(get_self());// get the assets table (scoped to the contract)
 
-    asset removed_rate = asset(0, config.token_symbol);
-
-    // get the assets table (scoped to the contract)
-    const auto& aa_asset_tbl = atomicassets::get_assets(get_self());
-
+    // --- Get user's assets --- //
     for (const uint64_t& asset_id : asset_ids) {
-        // find the asset data, to get the template id from it
-        const auto& asset_itr = asset_tbl.find(asset_id);
+        const auto& asset_itr = asset_tbl.find(asset_id);// Find the asset data, get the template id 
 
-        // check if the asset is staked
-        if (asset_itr == asset_tbl.end()) {
+        if (asset_itr == asset_tbl.end()) {// check if the asset is staked
             check(false, string("asset (" + to_string(asset_id) + ") is not staked").c_str());
         }
 
-        // check if the asset belongs to the user
-        if (asset_itr->owner != user) {
+        if (asset_itr->owner != user) {// check if the asset belongs to the user
             check(false, string("asset (" + to_string(asset_id) + ") does not belong to " + user.to_string()).c_str());
         }
 
-        // find the asset data, to get the template id from it
-        const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
+        const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);// Find the asset data, get the template id 
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
             check(false, string("asset (" + to_string(asset_id) + ") does not exist").c_str());
         }
 
-        // check if the asset's template is stakeable
-        const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);
+        const auto& template_itr = template_tbl.find(aa_asset_itr->template_id);// check if the asset's template is stakeable
 
         if (template_itr == template_tbl.end()) {
             check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
@@ -579,21 +412,8 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
             check(false, string("asset (" + to_string(asset_id) + ") cannot be unstaked yet").c_str());
         }
 
-        // increment the removed amount
-        removed_rate += template_itr->timeunit_rate;
-
-        // remove the assets from the user's staked assets
-        asset_tbl.erase(asset_itr);
+        asset_tbl.erase(asset_itr);// delete the NFTs
     }
-
-    // sanity check
-    // this should never happen unless the template rate was changed after staking
-    check(removed_rate <= user_itr->timeunit_rate, "unstaked rate larger than user's rate; this shouldn't happen !!");
-
-    // save the new rate
-    user_tbl.modify(user_itr, same_payer, [&](auto& row) {
-        row.timeunit_rate -= removed_rate;
-    });
 
     // send the assets back
     action(permission_level { get_self(), name("active") }, atomicassets::ATOMICASSETS_ACCOUNT, name("transfer"),
@@ -604,41 +424,35 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids)
 [[eosio::on_notify("atomicassets::transfer")]] void
 loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
 {
-    // ignore outgoing transactions and transaction not destined to the dapp itself
-    if (to != get_self() || from == get_self()) {
+   
+    if (to != get_self() || from == get_self()) {// Ignore outgoing transactions and transaction not destined to the dapp itself
         return;
     }
 
-    /*/ ignore transactions if the memo isn't stake
-    if (memo != "stake") {
-        return;
-    }/*/
-
-    // check if the contract isn't frozen
+    // --- Import config --- //
     const auto& config = check_config();
 
-    // get users table instance
+    // --- Get users table --- //
     user_t user_tbl(get_self(), get_self().value);
 
     const auto& user_itr = user_tbl.find(from.value);
 
-    // check if the user is registered
+    // --- Check if the user is registered --- //
     if (user_itr == user_tbl.end()) {
         check(false, string("user " + from.to_string() + " is not registered").c_str());
     }
 
-    // get the assets table (scoped to the contract)
+    // --- Get the assets table (scoped to the contract) --- //
     const auto& aa_asset_tbl = atomicassets::get_assets(get_self());
 
-    // get template table instance
-    template_t template_tbl(get_self(), get_self().value);
-    // get asset table instance
-    asset_t asset_tbl(get_self(), get_self().value);
+    template_t template_tbl(get_self(), get_self().value);// get template table 
+
+    asset_t asset_tbl(get_self(), get_self().value);// get asset table 
 
     asset added_rate = asset(0, config.token_symbol);
 
     for (const uint64_t& asset_id : asset_ids) {
-        // find the asset data, to get the template id from it
+        // Find the asset data, get the template id 
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
@@ -652,8 +466,6 @@ loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
             check(false, string("asset (" + to_string(asset_id) + ") is not stakeable").c_str());
         }
 
-        // increment the added rate
-        added_rate += template_itr->timeunit_rate;
 
         // save the asset
         asset_tbl.emplace(get_self(), [&](asset_s& row) {
@@ -663,8 +475,5 @@ loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
         });
     }
 
-    // save the new rate
-    user_tbl.modify(user_itr, same_payer, [&](auto& row) {
-        row.timeunit_rate += added_rate;
-    });
+
 }
