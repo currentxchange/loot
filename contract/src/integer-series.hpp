@@ -1,5 +1,4 @@
     // --- Series Constants --- //
-    //Also accepts ZERO which sets rewards to Zero and COUNT which counts from one. 
     namespace series {
     
     const std::vector<uint64_t> FIBONACCI = {1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765, 10946, 17711, 28657, 9999999999999999999};
@@ -20,7 +19,7 @@
     }
 
 
-        // --- Return a Series --- //
+    // --- Return a Series --- //
     vector<uint64_t> getSeries(const string& seriesName){
         if (seriesName == "FIBONACCI") {
             return series::FIBONACCI;

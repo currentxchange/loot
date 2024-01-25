@@ -19,16 +19,10 @@ public:
 
     // === Admin Actions === //
 
-    // --- Set the contract configuration --- //
-    //ACTION setconfig(const uint32_t &tu_length, const uint32_t &unstake_period);
-
     // --- Register NFT collection and rewards --- //
     ACTION setnftcolrew(const name& user, const name& collection, const symbol& token_symbol, const name& token_contract, const uint32_t& tu_length, const uint32_t& unstake_period,
                         const string& reward_series_referral, const double& reward_coefficient_referral, const string& reward_series_hodl, const double& reward_coefficient_hodl);
-
-    // --- Set the reward token --- //
-    //ACTION settoken(const name &contract, const symbol &symbol);
-
+    
     // --- Refund rewards --- //
     ACTION refund(const name& user, const name& collection, const asset& refund_amount);
 
@@ -164,22 +158,21 @@ private:
 
     // === Contract Utilities === //
 
-
     // --- Check if user is authorized on NFT collection --- //
-      bool isAuthorized(name collection, name user)
-      {
-         auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
-         bool authorized = false;
-         vector<name> authAccounts = itrCollection->authorized_accounts;
-         for (auto it = authAccounts.begin(); it != authAccounts.end() && !authorized; it++)
-         {
-            if (user == name(*it))
-            {
-               authorized = true;
-            }
-         }
-         return authorized;
-      }
+    bool isAuthorized(name collection, name user)
+    {
+        auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
+        bool authorized = false;
+        vector<name> authAccounts = itrCollection->authorized_accounts;
+        for (auto it = authAccounts.begin(); it != authAccounts.end() && !authorized; it++)
+        {
+        if (user == name(*it))
+        {
+            authorized = true;
+        }
+        }
+        return authorized;
+    }
 
 
 };//END CONTRACT loot 
