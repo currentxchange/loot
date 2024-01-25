@@ -9,7 +9,7 @@
             "fields": [
                 {
                     "name": "template_id",
-                    "type": "int32"
+                    "type": "uint32"
                 },
                 {
                     "name": "collection",
@@ -40,6 +40,24 @@
             ]
         },
         {
+            "name": "bank_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "amount",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
             "name": "claim",
             "base": "",
             "fields": [
@@ -48,8 +66,8 @@
                     "type": "name"
                 },
                 {
-                    "name": "asset_ids",
-                    "type": "uint64[]"
+                    "name": "collection",
+                    "type": "name"
                 }
             ]
         },
@@ -57,6 +75,14 @@
             "name": "config",
             "base": "",
             "fields": [
+                {
+                    "name": "creator",
+                    "type": "name"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
                 {
                     "name": "token_contract",
                     "type": "name"
@@ -66,12 +92,50 @@
                     "type": "symbol"
                 },
                 {
-                    "name": "min_claim_period",
+                    "name": "tu_length",
                     "type": "uint32"
                 },
                 {
                     "name": "unstake_period",
                     "type": "uint32"
+                },
+                {
+                    "name": "reward_series_referral",
+                    "type": "string"
+                },
+                {
+                    "name": "reward_coefficient_referral",
+                    "type": "float64"
+                },
+                {
+                    "name": "reward_series_hodl",
+                    "type": "string"
+                },
+                {
+                    "name": "reward_coefficient_hodl",
+                    "type": "float64"
+                },
+                {
+                    "name": "last_claim",
+                    "type": "time_point_sec"
+                }
+            ]
+        },
+        {
+            "name": "refund",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "refund_amount",
+                    "type": "asset"
                 }
             ]
         },
@@ -104,44 +168,62 @@
             "base": "",
             "fields": [
                 {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
                     "name": "template_id",
-                    "type": "int32"
+                    "type": "uint32"
+                },
+                {
+                    "name": "collection",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "setnftcolrew",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
                 },
                 {
                     "name": "collection",
                     "type": "name"
                 },
                 {
-                    "name": "timeunit_rate",
-                    "type": "asset"
-                }
-            ]
-        },
-        {
-            "name": "setconfig",
-            "base": "",
-            "fields": [
+                    "name": "token_symbol",
+                    "type": "symbol"
+                },
                 {
-                    "name": "min_claim_period",
+                    "name": "token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "tu_length",
                     "type": "uint32"
                 },
                 {
                     "name": "unstake_period",
                     "type": "uint32"
-                }
-            ]
-        },
-        {
-            "name": "settoken",
-            "base": "",
-            "fields": [
-                {
-                    "name": "contract",
-                    "type": "name"
                 },
                 {
-                    "name": "symbol",
-                    "type": "symbol"
+                    "name": "reward_series_referral",
+                    "type": "string"
+                },
+                {
+                    "name": "reward_coefficient_referral",
+                    "type": "float64"
+                },
+                {
+                    "name": "reward_series_hodl",
+                    "type": "string"
+                },
+                {
+                    "name": "reward_coefficient_hodl",
+                    "type": "float64"
                 }
             ]
         },
@@ -151,7 +233,7 @@
             "fields": [
                 {
                     "name": "template_id",
-                    "type": "int32"
+                    "type": "uint32"
                 },
                 {
                     "name": "collection",
@@ -190,12 +272,34 @@
                     "type": "name"
                 },
                 {
-                    "name": "stacked",
-                    "type": "asset"
+                    "name": "refscore",
+                    "type": "uint32"
+                }
+            ]
+        },
+        {
+            "name": "user_templ_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
                 },
                 {
-                    "name": "refscore",
-                    "type": "uint64"
+                    "name": "collection",
+                    "type": "name"
+                },
+                {
+                    "name": "template_id",
+                    "type": "uint32"
+                },
+                {
+                    "name": "amount_staked",
+                    "type": "uint32"
+                },
+                {
+                    "name": "last_claim",
+                    "type": "time_point_sec"
                 }
             ]
         }
@@ -209,6 +313,11 @@
         {
             "name": "claim",
             "type": "claim",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "refund",
+            "type": "refund",
             "ricardian_contract": ""
         },
         {
@@ -227,13 +336,8 @@
             "ricardian_contract": ""
         },
         {
-            "name": "setconfig",
-            "type": "setconfig",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "settoken",
-            "type": "settoken",
+            "name": "setnftcolrew",
+            "type": "setnftcolrew",
             "ricardian_contract": ""
         },
         {
@@ -246,6 +350,13 @@
         {
             "name": "assets",
             "type": "asset_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "bank",
+            "type": "bank_s",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
@@ -267,6 +378,13 @@
         {
             "name": "users",
             "type": "user_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "usertempls",
+            "type": "user_templ_s",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

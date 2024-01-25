@@ -379,7 +379,7 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids) {
 }
 
 
-ACTION refund(const name& user, const name& collection, const asset& refund_amount) {
+ACTION loot::refund(const name& user, const name& collection, const asset& refund_amount) {
     // --- Authentication Check --- //
     check(has_auth(user), "user " + user.to_string() + " has not authorized this action");
 

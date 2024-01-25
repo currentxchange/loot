@@ -55,27 +55,10 @@ public:
     // === Notify Handlers === //
 
     // --- Recieves Rewards from the NFT collection --- //
-    void on_transfer(name from, name to, asset quantity, string memo);
+    void on_transfer(name& from, name& to, asset quantity, string memo);
 
     // --- Recieves NFTs from the user --- //
     void receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo);
-
-      // --- Check if user is authorized on NFT collection --- //
-      bool isAuthorized(name collection, name user)
-      {
-         auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
-         bool authorized = false;
-         vector<name> authAccounts = itrCollection->authorized_accounts;
-         for (auto it = authAccounts.begin(); it != authAccounts.end() && !authorized; it++)
-         {
-            if (user == name(*it))
-            {
-               authorized = true;
-            }
-         }
-         return authorized;
-      }//END isAuthorized()
-
 
 
 
@@ -181,16 +164,22 @@ private:
 
     // === Contract Utilities === //
 
-    /*/ --- Returns the config object for use withing actions --- //
-    config check_config()
-    {
-        config_t conf_tbl(get_self(), get_self().value);// Get config table
-        check(conf_tbl.exists(), "The contract is not initialized yet"); // Check if a config exists
-        const auto &conf = conf_tbl.get(); // Get  current config
 
-        return conf; // Returns the config table for the 
-    }
+    // --- Check if user is authorized on NFT collection --- //
+      bool isAuthorized(name collection, name user)
+      {
+         auto itrCollection = atomicassets::collections.require_find(collection.value, "No collection with this name exists.");
+         bool authorized = false;
+         vector<name> authAccounts = itrCollection->authorized_accounts;
+         for (auto it = authAccounts.begin(); it != authAccounts.end() && !authorized; it++)
+         {
+            if (user == name(*it))
+            {
+               authorized = true;
+            }
+         }
+         return authorized;
+      }
 
-    /*/
 
 };//END CONTRACT loot 
