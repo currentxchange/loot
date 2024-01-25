@@ -169,10 +169,10 @@ private:
         if (user == name(*it))
         {
             authorized = true;
+            break;
         }
         }
         return authorized;
     }
-
 
 };//END CONTRACT loot 
