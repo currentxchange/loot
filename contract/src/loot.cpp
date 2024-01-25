@@ -2,8 +2,7 @@
 
 
 ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol& token_symbol, const name& token_contract, const uint32_t& tu_length, const uint32_t& unstake_period,
-                        const string& reward_series_referral = string("TETRAHEDRAL"), const double& reward_coefficient_referral = 1.0, const string& reward_series_hodl = string("TETRAHEDRAL"), const double& reward_coefficient_hodl = 1.0)
-{
+                        const string& reward_series_referral = string("TETRAHEDRAL"), const double& reward_coefficient_referral = 1.0, const string& reward_series_hodl = string("TETRAHEDRAL"), const double& reward_coefficient_hodl = 1.0){
     // --- Authorization Check --- // 
    check(has_auth(get_self()) || has_auth(user), "Missing authorization by user.");
    check(isAuthorized(collection, user), "Missing Authorization. To start rewards, you must be authorized for the collection on atomicassets.");
@@ -15,7 +14,7 @@ ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol
     stat_t stat(token_contract, token_symbol.code().raw());
     stat.require_find(token_symbol.code().raw(), "Token symbol does not exist on the token contract");
 
-        // --- Initialize config_t --- //'
+    // --- Initialize config_t --- //'
     config_t config_tbl(get_self(), get_self().value);
     auto config_itr = config_tbl.find(collection.value);
 
@@ -51,7 +50,7 @@ ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol
 
 
 
-ACTION loot::addtemplates(const uint32_t& template_id, const name& collection, const asset& timeunit_rate) {
+ACTION loot::addtemplates(const uint32_t& template_id, const name& collection, const asset& timeunit_rate){
     // --- Authentication Check --- //
     check(has_auth(get_self()), "this action is admin only");
 
@@ -108,8 +107,7 @@ ACTION loot::rmtemplates(const name& user, const uint32_t& template_id, const na
     template_tbl.erase(template_row);
 }
 
-ACTION loot::resetuser(const name& user)
-{
+ACTION loot::resetuser(const name& user){
     // --- Authentication Check --- // 
      check(has_auth(get_self()) || has_auth(user), "Missing authorization by admin or the user themselves.");
 
@@ -259,7 +257,7 @@ ACTION loot::claim(const name& user, const name& collection) {
     uint32_t series_size_hodl;
     uint32_t template_count;
 
-    // Iterate over each template staked by the user
+    // --- Calculate reward for each template --- //
     for (auto user_template_itr = user_template_tbl.begin(); user_template_itr != user_template_tbl.end(); ++user_template_itr) {
         if (user_template_itr->collection == collection) {
         
@@ -275,13 +273,26 @@ ACTION loot::claim(const name& user, const name& collection) {
 
             template_count = user_template_itr->amount_staked;
 
-            for (size_t i = 0; i < series_size_hodl; ++i) {
-                if (template_count > reward_series_hodl[i]) {
-                    // --- Add to claimed amount i +1 = user level, Apply 
-                    claimed_amount.amount += ((i + 1) * config_itr->reward_coefficient_hodl) * (refscore_lvl * config_itr->reward_coefficient_referral) * reward_for_template; 
-                    break;
+            uint32_t hodl_lvl;
+            // --- Get hodl level --- //
+            if (reward_series_hodl != std::vector<uint64_t>()){
+                for (size_t i = 0; i < series_size_hodl; ++i) {
+                    if (template_count > reward_series_hodl[i]) {
+                        hodl_lvl = i + 1;
+                        break;
+                    }
                 }
+            } else { 
+                // --- Linear reward series --- //
+                hodl_lvl = template_count;
             }
+
+            // --- Add to the claimed amount --- //
+            claimed_amount.amount += (hodl_lvl * config_itr->reward_coefficient_hodl) * (refscore_lvl * config_itr->reward_coefficient_referral) * reward_for_template; 
+
+
+
+
             user_template_tbl.modify(user_template_itr, get_self(), [&](auto& row) {
                 row.last_claim = time_point_sec(current_time_point());
             });
@@ -344,6 +355,7 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids) {
 
         for (auto user_template_itr = user_template_tbl.begin(); user_template_itr != user_template_tbl.end(); ++user_template_itr) {
             if (user_template_itr->collection.value == aa_asset_itr->collection_name.value) {
+                //TODO delete record when user unstakes all NFTs
                 user_template_tbl.modify(user_template_itr, get_self(), [&](auto& row) {
                     row.amount_staked -= 1; // Decrement by 1 for each unstaked asset
                 });
@@ -397,8 +409,7 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
 
 
     [[eosio::on_notify("atomicassets::transfer")]] void
-    loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo)
-    {
+    loot::receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo) {
         
         if (to != get_self() || from == get_self()) {// Ignore outgoing transactions and transaction not destined to the dapp itself
             return;

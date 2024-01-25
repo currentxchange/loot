@@ -49,7 +49,7 @@ public:
     // === Notify Handlers === //
 
     // --- Recieves Rewards from the NFT collection --- //
-    void on_transfer(name& from, name& to, asset quantity, string memo);
+    void on_transfer(name from, name to, asset quantity, string memo);
 
     // --- Recieves NFTs from the user --- //
     void receiveassets(name from, name to, vector<uint64_t> asset_ids, string memo);
