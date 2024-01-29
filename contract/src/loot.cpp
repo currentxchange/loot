@@ -244,7 +244,7 @@ ACTION loot::claim(const name& user, const name& collection) {
         uint32_t series_size_referral = reward_series_referral.size();
 
         for (size_t i = 0; i < series_size_referral; ++i) {
-            if (refscore > reward_series_referral[i]) {
+            if (refscore < reward_series_referral[i]) {
                 refscore_lvl = i + 1; // Update the refscore level based on the series
                 break;
             }
@@ -282,7 +282,7 @@ ACTION loot::claim(const name& user, const name& collection) {
             // --- Get hodl level --- //
             if (reward_series_hodl != std::vector<uint64_t>()){
                 for (size_t i = 0; i < series_size_hodl; ++i) {
-                    if (template_count > reward_series_hodl[i]) {
+                    if (template_count < reward_series_hodl[i]) {
                         hodl_lvl = i + 1;
                         break;
                     }
@@ -317,7 +317,7 @@ ACTION loot::claim(const name& user, const name& collection) {
     memo += "HODL Lvl: " + std::to_string(hodl_lvl) + ", ";
     memo += "HODL Co: " + std::to_string(config_itr->reward_coefficient_hodl) + ", ";
     memo += "Referral Lvl: " + std::to_string(refscore_lvl) + ", ";
-    memo += "Referral co: " + std::to_string(config_itr->reward_coefficient_referral) + ", ";
+    memo += "Referral sc: " + std::to_string(refscore) + ", ";
     memo += "Reward tpl: " + std::to_string(reward_for_template) + "TUs: " + std::to_string(time_units_passed);
    
 
