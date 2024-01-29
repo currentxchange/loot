@@ -1,7 +1,7 @@
 #include "loot.hpp"
 
 
-ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol& token_symbol, const name& token_contract, const uint32_t& tu_length, const uint32_t& unstake_period,
+ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol& token_symbol, const name& token_contract, const uint32_t& time_unit_length, const uint32_t& unstake_period,
                         const string& reward_series_referral = string("TETRAHEDRAL"), const double& reward_coefficient_referral = 1.0, const string& reward_series_hodl = string("TETRAHEDRAL"), const double& reward_coefficient_hodl = 1.0){
     // --- Authorization Check --- // 
    check(has_auth(get_self()) || has_auth(user), "Missing authorization by user.");
@@ -25,7 +25,7 @@ ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol
             row.collection = collection;
             row.token_contract = token_contract;
             row.token_symbol = token_symbol;
-            row.tu_length = tu_length;
+            row.time_unit_length = time_unit_length;
             row.unstake_period = unstake_period;
             row.reward_series_referral = reward_series_referral;
             row.reward_coefficient_referral = reward_coefficient_referral;
@@ -36,7 +36,7 @@ ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol
         config_tbl.modify(config_itr, user, [&](auto& row) {
             row.token_contract = token_contract;
             row.token_symbol = token_symbol;
-            row.tu_length = tu_length;
+            row.time_unit_length = time_unit_length;
             row.unstake_period = unstake_period;
             row.reward_series_referral = reward_series_referral;
             row.reward_coefficient_referral = reward_coefficient_referral;
@@ -50,9 +50,10 @@ ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol
 
 
 
-ACTION loot::addtemplates(const uint32_t& template_id, const name& collection, const asset& timeunit_rate){
+ACTION loot::addtemplates(const name& user, const uint32_t& template_id, const name& collection, const asset& timeunit_rate){
     // --- Authentication Check --- //
-    check(has_auth(get_self()), "this action is admin only");
+    check(has_auth(user) || has_auth(get_self()), "Missing authorization by user.");
+    check(isAuthorized(collection, user), "Missing Authorization. To start rewards, you must be authorized for the collection on atomicassets.");
 
     // --- Access Config Collection Table --- //
     config_t config_tbl(get_self(), get_self().value);
@@ -266,7 +267,7 @@ ACTION loot::claim(const name& user, const name& collection) {
             check(template_itr != template_tbl.end(), "Template not found.");
 
             // Calculate the reward for this template
-            uint32_t time_units_passed = current_time_point().sec_since_epoch() / config_itr->tu_length;
+            uint32_t time_units_passed = current_time_point().sec_since_epoch() / config_itr->time_unit_length;
             uint32_t reward_for_template = time_units_passed * user_template_itr->amount_staked * template_itr->timeunit_rate.amount;
             
             series_size_hodl = reward_series_hodl.size();

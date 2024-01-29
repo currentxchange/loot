@@ -8,6 +8,10 @@
             "base": "",
             "fields": [
                 {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
                     "name": "template_id",
                     "type": "uint32"
                 },
@@ -92,7 +96,7 @@
                     "type": "symbol"
                 },
                 {
-                    "name": "tu_length",
+                    "name": "time_unit_length",
                     "type": "uint32"
                 },
                 {
@@ -202,7 +206,7 @@
                     "type": "name"
                 },
                 {
-                    "name": "tu_length",
+                    "name": "time_unit_length",
                     "type": "uint32"
                 },
                 {

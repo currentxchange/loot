@@ -20,14 +20,14 @@ public:
     // === Admin Actions === //
 
     // --- Register NFT collection and rewards --- //
-    ACTION setnftcolrew(const name& user, const name& collection, const symbol& token_symbol, const name& token_contract, const uint32_t& tu_length, const uint32_t& unstake_period,
+    ACTION setnftcolrew(const name& user, const name& collection, const symbol& token_symbol, const name& token_contract, const uint32_t& time_unit_length, const uint32_t& unstake_period,
                         const string& reward_series_referral, const double& reward_coefficient_referral, const string& reward_series_hodl, const double& reward_coefficient_hodl);
     
     // --- Refund rewards --- //
     ACTION refund(const name& user, const name& collection, const asset& refund_amount);
 
     // --- Add stakable NFT templates --- //
-    ACTION addtemplates(const uint32_t& template_id, const name& collection, const asset& timeunit_rate);
+    ACTION addtemplates(const name& user, const uint32_t& template_id, const name& collection, const asset& timeunit_rate);
 
     // --- Remove stakable NFT templates --- //
     ACTION rmtemplates(const name& user, const uint32_t& template_id, const name& collection);
@@ -75,7 +75,7 @@ private:
         uint32_t refscore = 0; // Number of referrals made by the user
 
         auto primary_key() const { return user.value; }
-        uint64_t by_referrals() const { (uint64_t)refscore; } // Secondary index to sort/query the users by their number of referrals
+        //uint64_t by_referrals() const { (uint64_t)refscore; } // Secondary index to sort/query the users by their number of referrals
     };
 
     // --- NFTs + Claims --- // 
@@ -125,7 +125,7 @@ private:
         name collection; 
         name token_contract;
         symbol token_symbol;
-        uint32_t tu_length;// Minimum wait (in seconds) for claiming rewards
+        uint32_t time_unit_length;// Minimum wait (in seconds) for claiming rewards
         uint32_t unstake_period;// Minimum wait (in seconds) for claiming rewards
         string reward_series_referral;
         double reward_coefficient_referral;
@@ -139,8 +139,8 @@ private:
 
     typedef multi_index<name("stat"), stat_s> stat_t;
 
-    typedef multi_index<name("users"), user_s,
-        indexed_by<name("referrals"), const_mem_fun<user_s, uint64_t, &user_s::by_referrals>>
+    typedef multi_index<name("users"), user_s
+        //, indexed_by<name("referrals"), const_mem_fun<user_s, uint64_t, &user_s::by_referrals>>
     > user_t;
 
     typedef multi_index<name("usertempls"), user_templ_s,
