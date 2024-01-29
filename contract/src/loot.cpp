@@ -257,6 +257,13 @@ ACTION loot::claim(const name& user, const name& collection) {
 
     uint32_t series_size_hodl;
     uint32_t template_count;
+    uint32_t hodl_lvl;
+    uint32_t reward_for_template;
+    uint32_t time_units_passed;
+
+    double referral_bonus_multiplier;
+    double hodl_bonus_multiplier;
+
 
     // --- Calculate reward for each template --- //
     for (auto user_template_itr = user_template_tbl.begin(); user_template_itr != user_template_tbl.end(); ++user_template_itr) {
@@ -267,14 +274,13 @@ ACTION loot::claim(const name& user, const name& collection) {
             check(template_itr != template_tbl.end(), "Template not found.");
 
             // Calculate the reward for this template
-            uint32_t time_units_passed = current_time_point().sec_since_epoch() / config_itr->time_unit_length;
-            uint32_t reward_for_template = time_units_passed * user_template_itr->amount_staked * template_itr->timeunit_rate.amount;
+            time_units_passed = ( current_time_point().sec_since_epoch() - user_template_itr->last_claim.sec_since_epoch() )/ config_itr->time_unit_length;
+            reward_for_template = time_units_passed * user_template_itr->amount_staked * template_itr->timeunit_rate.amount;
             
             series_size_hodl = reward_series_hodl.size();
 
             template_count = user_template_itr->amount_staked;
 
-            uint32_t hodl_lvl;
             // --- Get hodl level --- //
             if (reward_series_hodl != std::vector<uint64_t>()){
                 for (size_t i = 0; i < series_size_hodl; ++i) {
@@ -289,10 +295,11 @@ ACTION loot::claim(const name& user, const name& collection) {
             }
 
             // --- Add to the claimed amount --- //
-            claimed_amount.amount += (hodl_lvl * config_itr->reward_coefficient_hodl) * (refscore_lvl * config_itr->reward_coefficient_referral) * reward_for_template; 
 
+            double referral_bonus_multiplier = (config_itr->reward_coefficient_referral > 0) ? (refscore_lvl * config_itr->reward_coefficient_referral) : 1.0;
+            double hodl_bonus_multiplier = (config_itr->reward_coefficient_hodl > 0) ? (hodl_lvl * config_itr->reward_coefficient_hodl) : 1.0;
 
-
+            claimed_amount.amount += hodl_bonus_multiplier * referral_bonus_multiplier * reward_for_template; 
 
             user_template_tbl.modify(user_template_itr, get_self(), [&](auto& row) {
                 row.last_claim = time_point_sec(current_time_point());
@@ -304,7 +311,18 @@ ACTION loot::claim(const name& user, const name& collection) {
     check(claimed_amount.amount > 0, "No rewards to claim. Wait a bit.");
 
     // --- Create memo for transaction --- //
-    string memo = "Claimed rewards via " + collection.to_string() + " collection.";
+    //string memo = "Claimed rewards via " + collection.to_string() + " collection.";
+
+
+    // --- Debugging Memo --- //
+    string memo = "";
+    memo += "HODL Lvl: " + std::to_string(hodl_lvl) + ", ";
+    memo += "HODL Co: " + std::to_string(config_itr->reward_coefficient_hodl) + ", ";
+    memo += "Referral Lvl: " + std::to_string(refscore_lvl) + ", ";
+    memo += "Referral co: " + std::to_string(config_itr->reward_coefficient_referral) + ", ";
+    memo += "Reward tpl: " + std::to_string(reward_for_template) + "TUs: " + std::to_string(time_units_passed);
+   
+
 
     // --- Send the reward tokens --- //
     action(
