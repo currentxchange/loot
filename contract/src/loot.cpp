@@ -231,7 +231,7 @@ ACTION loot::claim(const name& user, const name& collection) {
     vector<uint64_t> reward_series_referral = getSeries(string(config_itr->reward_series_referral));
     vector<uint64_t> reward_series_hodl = getSeries(string(config_itr->reward_series_hodl));
 
-
+    //TODO Ensure there's a 0-reward option (MAke it intuitive)
     // --- Determine the user's position in the referral reward series --- //
     user_t user_tbl(get_self(), get_self().value);
     const auto& user_itr = user_tbl.find(user.value);
@@ -431,13 +431,11 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
         template_t template_tbl(get_self(), get_self().value);
         user_templ_t user_template_tbl(get_self(), from.value);
 
-
         // --- Iterate through each asset received --- //
         for (const uint64_t& asset_id : asset_ids) {
             // --- Check the atomic assets table --- //
-            auto aa_assets = atomicassets::get_assets(from);
-            auto aa_asset_itr = aa_assets.find(asset_id);
-            check(aa_asset_itr != aa_assets.end(), "Asset ID: " + std::to_string(asset_id) + " does not exist.");
+            auto aa_asset_itr = aa_asset_tbl.find(asset_id);
+            check(aa_asset_itr != aa_asset_tbl.end(), "Asset ID: " + std::to_string(asset_id) + " does not exist.");
 
             // --- Check if the assert is stackable --- //
             auto template_itr = template_tbl.find(aa_asset_itr->template_id);
@@ -451,11 +449,13 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
             });
 
             // --- Update or insert into the user assets  --- //
+
+            auto newtempid = aa_asset_itr->collection_name;
             auto user_template_itr = user_template_tbl.find(from.value);
             if (user_template_itr == user_template_tbl.end()) {
                 user_template_tbl.emplace(get_self(), [&](auto& row) {
                     row.user = from;
-                    row.collection = aa_asset_itr->collection_name;
+                    row.collection = newtempid;
                     row.template_id = aa_asset_itr->template_id;
                     row.amount_staked = 1; // Increment by 1 for each asset
                     row.last_claim = time_point_sec(current_time_point());
@@ -490,13 +490,13 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
         // --- Check if the sender is authorized for the collection -- //
         check(isAuthorized(collection, from), "Sender is not authorized for this collection");
 
-
         // --- Access the bank table, scoped to this contract --- //
         bank_t bank_tbl(get_self(), get_self().value);
         auto bank_itr = bank_tbl.find(collection.value);
 
         // --- Insert or update the bank record --- //
         if (bank_itr == bank_tbl.end()) {
+
             // --- If the collection is not in the bank, add it --- //
             bank_tbl.emplace(get_self(), [&](auto& row) {
                 row.collection = collection;
