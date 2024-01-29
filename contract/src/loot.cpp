@@ -261,8 +261,6 @@ ACTION loot::claim(const name& user, const name& collection) {
     uint32_t reward_for_template;
     uint32_t time_units_passed;
 
-    double referral_bonus_multiplier;
-    double hodl_bonus_multiplier;
 
 
     // --- Calculate reward for each template --- //
@@ -295,11 +293,11 @@ ACTION loot::claim(const name& user, const name& collection) {
             }
 
             // --- Add to the claimed amount --- //
-
-            double referral_bonus_multiplier = (config_itr->reward_coefficient_referral > 0) ? (refscore_lvl * config_itr->reward_coefficient_referral) : 1.0;
-            double hodl_bonus_multiplier = (config_itr->reward_coefficient_hodl > 0) ? (hodl_lvl * config_itr->reward_coefficient_hodl) : 1.0;
-
-            claimed_amount.amount += hodl_bonus_multiplier * referral_bonus_multiplier * reward_for_template; 
+            claimed_amount.amount += (
+                (config_itr->reward_coefficient_referral > 0 ? refscore_lvl * config_itr->reward_coefficient_referral : 1.0) *
+                (config_itr->reward_coefficient_hodl > 0 ? hodl_lvl * config_itr->reward_coefficient_hodl : 1.0) *
+                reward_for_template
+            );
 
             user_template_tbl.modify(user_template_itr, get_self(), [&](auto& row) {
                 row.last_claim = time_point_sec(current_time_point());
