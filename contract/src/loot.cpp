@@ -307,12 +307,11 @@ ACTION loot::claim(const name& user, const name& collection) {
 
     check(claimed_amount.amount > 0, "No rewards to claim. ⚡️ Stake to this collection & wait a bit.");
 
-    // --- Access the bank table and find the record for the collection --- //
-    bank_t bank_tbl(get_self(), get_self().value);
-    auto bank_itr = bank_tbl.require_find(collection.value, "No bank record found for this collection");
 
-    // Ensure there are enough funds in the bank for this collection
-    check(bank_itr->amount >= claimed_amount, "Insufficient funds in the bank for this collection to cover the claim");
+    // === Banker for the collection === // 
+    bank_t bank_tbl(get_self(), get_self().value);
+    auto bank_itr = bank_tbl.require_find(collection.value, "⚡️ No bank record found for this collection. Send token with memo of collection.");
+    check(bank_itr->amount >= claimed_amount, "⚡️ Insufficient funds in the bank for this collection to cover the claim");
 
     // --- Decrement the bank record by the claimed amount --- //
     bank_tbl.modify(bank_itr, same_payer, [&](auto& row) {
@@ -320,8 +319,9 @@ ACTION loot::claim(const name& user, const name& collection) {
     });
 
 
+
     // --- Detailed Memo --- //
-    string memo = "";
+    string memo = "\U0001F4B0 ";
     memo += "Looted: " + std::to_string(reward_for_template.amount) + ", for " + std::to_string(time_units_passed) + " Time Units, ";
     memo += "HODL Lvl: " + std::to_string(hodl_lvl) + ", ";
     memo += "Bonus: " + std::to_string((int) config_itr->reward_coefficient_hodl) + "x, ";
@@ -342,9 +342,9 @@ ACTION loot::claim(const name& user, const name& collection) {
 
 ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids) {
     // --- Authentication Check --- //
-    check(has_auth(user), "user " + user.to_string() + " has not authorized this action");
+    check(has_auth(user), "⚡️ User " + user.to_string() + " has not authorized this action");
 
-    check(asset_ids.size() > 0, "Must unstake at least 1 asset");
+    check(asset_ids.size() > 0, "⚡️ Must unstake at least 1 asset");
 
     user_templ_t user_template_tbl(get_self(), user.value);
     asset_t asset_tbl(get_self(), get_self().value); // get asset table 
@@ -353,25 +353,25 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids) {
     // --- Iterate over each asset to unstake --- //
     for (const uint64_t& asset_id : asset_ids) {
         auto asset_itr = asset_tbl.find(asset_id); // Find the asset data
-        check(asset_itr != asset_tbl.end(), "NFT id: " + std::to_string(asset_id) + " is not staked");
-        check(asset_itr->owner == user, "NFT id: " + std::to_string(asset_id) + " does not belong to " + user.to_string());
+        check(asset_itr != asset_tbl.end(), "⚡️ NFT id: " + std::to_string(asset_id) + " is not staked");
+        check(asset_itr->owner == user, "⚡️ NFT id: " + std::to_string(asset_id) + " does not belong to " + user.to_string());
 
         // --- Get the assets table --- //
         const auto& aa_asset_tbl = atomicassets::get_assets(get_self());
         const auto& aa_asset_itr = aa_asset_tbl.find(asset_id);
 
         if (aa_asset_itr == aa_asset_tbl.end()) {
-            check(false, string("assert (" + to_string(asset_id) + ") does not exist").c_str());
+            check(false, string("⚡️ Asset (" + to_string(asset_id) + ") does not exist").c_str());
         }
 
         // --- Access the collection's config --- //
         config_t config_tbl(get_self(), get_self().value);
         auto config_itr = config_tbl.find(aa_asset_itr->collection_name.value);
-        check(config_itr != config_tbl.end(), "Config not found for collection: " + aa_asset_itr->collection_name.to_string());
+        check(config_itr != config_tbl.end(), "⚡️ Config not found for collection: " + aa_asset_itr->collection_name.to_string());
 
         // --- Check if the asset can be unstaked (based on unstake_period) --- //
         auto period_sec = current_time_point().sec_since_epoch() - asset_itr->last_claim.sec_since_epoch();
-        check(period_sec >= config_itr->unstake_period, "NFT id: " + std::to_string(asset_id) + " cannot be unstaked yet");
+        check(period_sec >= config_itr->unstake_period, "⚡️ NFT id: " + std::to_string(asset_id) + " cannot be unstaked yet");
 
         // --- Update the amount staked in the user_templ_s table --- //
         auto user_template_itr = user_template_tbl.find(user.value);
@@ -411,10 +411,10 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
     auto bank_itr = bank_tbl.find(collection.value);
 
     // --- Check if there is a record for the collection --- //
-    check(bank_itr != bank_tbl.end(), "No record found for this collection in the bank");
+    check(bank_itr != bank_tbl.end(), "⚡️ No record found for this collection in the bank");
 
     // --- Check if there are enough funds to refund --- //
-    check(bank_itr->amount >= refund_amount, "Insufficient funds to refund");
+    check(bank_itr->amount >= refund_amount, "⚡️ Insufficient funds to refund");
 
     // --- Send the refund to the user --- //
     action(
@@ -458,11 +458,11 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
         for (const uint64_t& asset_id : asset_ids) {
             // --- Check the atomic assets table --- //
             auto aa_asset_itr = aa_asset_tbl.find(asset_id);
-            check(aa_asset_itr != aa_asset_tbl.end(), "Asset ID: " + std::to_string(asset_id) + " does not exist.");
+            check(aa_asset_itr != aa_asset_tbl.end(), "⚡️ Asset ID: " + std::to_string(asset_id) + " does not exist.");
 
             // --- Check if the assert is stackable --- //
             auto template_itr = template_tbl.find(aa_asset_itr->template_id);
-            check(template_itr != template_tbl.end(), "Template ID: " + std::to_string(aa_asset_itr->template_id) + " is not stakeable. Collection owner must add it first.");
+            check(template_itr != template_tbl.end(), "⚡️ Template ID: " + std::to_string(aa_asset_itr->template_id) + " is not stakeable. Collection owner must add it first.");
 
             // --- Store a record in the assets table --- //
             asset_tbl.emplace(get_self(), [&](auto& row) {
@@ -503,14 +503,14 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
         auto config_itr = config_tbl.find(collection.value);
 
         // --- Check if the collection exists in the config --- //
-        check(config_itr != config_tbl.end(), "Memo must be the collection name. Collection not found.");
+        check(config_itr != config_tbl.end(), "⚡️ Memo must be the collection name. Collection not found.");
 
         // --- Check if the token is the correct type for this collection --- //
-        check(quantity.symbol == config_itr->token_symbol, "Incorrect token type for this collection");
-        check(get_first_receiver() == config_itr->token_contract, "Incorrect token contract for this collection");
+        check(quantity.symbol == config_itr->token_symbol, "⚡️ Incorrect token type for this collection");
+        check(get_first_receiver() == config_itr->token_contract, "⚡️ Incorrect token contract for this collection");
 
         // --- Check if the sender is authorized for the collection -- //
-        check(isAuthorized(collection, from), "Sender is not authorized for this collection");
+        check(isAuthorized(collection, from), "⚡️ Sender is not authorized for this collection");
 
         // --- Access the bank table, scoped to this contract --- //
         bank_t bank_tbl(get_self(), get_self().value);
@@ -528,7 +528,7 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
         } else {
             // --- If the collection is already in the bank, update the amount --- //
             bank_tbl.modify(bank_itr, same_payer, [&](auto& row) {
-                check(row.token_contract == get_first_receiver(), "Token contract mismatch. You can only have one reward token per collection.");
+                check(row.token_contract == get_first_receiver(), "⚡️ Token mismatch. You can only have one reward token type per collection.");
                 row.amount += quantity;
             });
         }
