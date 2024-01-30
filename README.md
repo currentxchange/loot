@@ -4,6 +4,7 @@ Here's a structured README for your repository that explains the actions and fea
 
 # Loot 💰 NFT Staking Smart Contract for AtomicAssets NFT collections
 
+[Testnet deployment](https://testnet.waxblock.io/account/whitepumats2)
 
 ## 🌞 Setting Up Rewards for Collection Owners
 To set up NFT staking rewards for your collection, follow these steps:
