@@ -119,7 +119,7 @@ ACTION loot::resetuser(const name& user){
         user_tbl.erase(user_itr);
     }
 
-    // --- Get asset table --- //
+    // --- Get Ssset table --- //
     asset_t asset_tbl(get_self(), get_self().value);
 
     vector<uint64_t> staked_assets = {};
@@ -232,7 +232,6 @@ ACTION loot::claim(const name& user, const name& collection) {
     vector<uint64_t> reward_series_referral = getSeries(string(config_itr->reward_series_referral));
     vector<uint64_t> reward_series_hodl = getSeries(string(config_itr->reward_series_hodl));
 
-    //TODO Ensure there's a 0-reward option (MAke it intuitive)
     // --- Determine the user's position in the referral reward series --- //
     user_t user_tbl(get_self(), get_self().value);
     const auto& user_itr = user_tbl.find(user.value);
@@ -306,21 +305,28 @@ ACTION loot::claim(const name& user, const name& collection) {
         }
     }
 
-    check(claimed_amount.amount > 0, "No rewards to claim. Wait a bit.");
+    check(claimed_amount.amount > 0, "No rewards to claim. ⚡️ Stake to this collection & wait a bit.");
 
-    // --- Create memo for transaction --- //
-    //string memo = "Claimed rewards via " + collection.to_string() + " collection.";
+    // --- Access the bank table and find the record for the collection --- //
+    bank_t bank_tbl(get_self(), get_self().value);
+    auto bank_itr = bank_tbl.require_find(collection.value, "No bank record found for this collection");
+
+    // Ensure there are enough funds in the bank for this collection
+    check(bank_itr->amount >= claimed_amount, "Insufficient funds in the bank for this collection to cover the claim");
+
+    // --- Decrement the bank record by the claimed amount --- //
+    bank_tbl.modify(bank_itr, same_payer, [&](auto& row) {
+        row.amount -= claimed_amount; // Subtract the claimed amount from the bank's balance for this collection
+    });
 
 
-    // --- Debugging Memo --- //
+    // --- Detailed Memo --- //
     string memo = "";
+    memo += "Looted: " + std::to_string(reward_for_template.amount) + ", for " + std::to_string(time_units_passed) + " Time Units, ";
     memo += "HODL Lvl: " + std::to_string(hodl_lvl) + ", ";
-    memo += "Bonus: " + std::to_string(config_itr->reward_coefficient_hodl) + "x, ";
+    memo += "Bonus: " + std::to_string((int) config_itr->reward_coefficient_hodl) + "x, ";
     memo += "Invite Lvl: " + std::to_string(refscore_lvl) + ", ";
-    memo += "Bonus: " + std::to_string(refscore) + "x, ";
-    memo += "Reward tpl: " + std::to_string(reward_for_template.amount) + "TUs: " + std::to_string(time_units_passed);
-   
-
+    memo += "Bonus: " + std::to_string((int) config_itr->reward_coefficient_referral) + "x.";
 
     // --- Send the reward tokens --- //
     action(
@@ -466,7 +472,6 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
             });
 
             // --- Update or insert into the user assets  --- //
-
             auto newtempid = aa_asset_itr->collection_name;
             auto user_template_itr = user_template_tbl.find(from.value);
             if (user_template_itr == user_template_tbl.end()) {
