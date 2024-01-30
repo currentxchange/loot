@@ -258,7 +258,7 @@ ACTION loot::claim(const name& user, const name& collection) {
     uint32_t series_size_hodl;
     uint32_t template_count;
     uint32_t hodl_lvl;
-    uint32_t reward_for_template;
+    asset reward_for_template(0, config_itr->token_symbol);
     uint32_t time_units_passed;
 
 
@@ -273,7 +273,7 @@ ACTION loot::claim(const name& user, const name& collection) {
 
             // Calculate the reward for this template
             time_units_passed = ( current_time_point().sec_since_epoch() - user_template_itr->last_claim.sec_since_epoch() )/ config_itr->time_unit_length;
-            reward_for_template = time_units_passed * user_template_itr->amount_staked * template_itr->timeunit_rate.amount;
+            reward_for_template.amount = time_units_passed * user_template_itr->amount_staked * template_itr->timeunit_rate.amount;
             
             series_size_hodl = reward_series_hodl.size();
 
@@ -296,7 +296,7 @@ ACTION loot::claim(const name& user, const name& collection) {
             claimed_amount.amount += (
                 (config_itr->reward_coefficient_referral > 0 ? refscore_lvl * config_itr->reward_coefficient_referral : 1.0) *
                 (config_itr->reward_coefficient_hodl > 0 ? hodl_lvl * config_itr->reward_coefficient_hodl : 1.0) *
-                reward_for_template
+                reward_for_template.amount
             );
 
             user_template_tbl.modify(user_template_itr, get_self(), [&](auto& row) {
@@ -315,10 +315,10 @@ ACTION loot::claim(const name& user, const name& collection) {
     // --- Debugging Memo --- //
     string memo = "";
     memo += "HODL Lvl: " + std::to_string(hodl_lvl) + ", ";
-    memo += "HODL Co: " + std::to_string(config_itr->reward_coefficient_hodl) + ", ";
-    memo += "Referral Lvl: " + std::to_string(refscore_lvl) + ", ";
-    memo += "Referral sc: " + std::to_string(refscore) + ", ";
-    memo += "Reward tpl: " + std::to_string(reward_for_template) + "TUs: " + std::to_string(time_units_passed);
+    memo += "Bonus: " + std::to_string(config_itr->reward_coefficient_hodl) + "x, ";
+    memo += "Invite Lvl: " + std::to_string(refscore_lvl) + ", ";
+    memo += "Bonus: " + std::to_string(refscore) + "x, ";
+    memo += "Reward tpl: " + std::to_string(reward_for_template.amount) + "TUs: " + std::to_string(time_units_passed);
    
 
 
