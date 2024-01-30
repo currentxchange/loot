@@ -121,6 +121,9 @@ There are some important concepts to understand when calling this action to set 
 
 1. The reward series arguments require sending an all-caps identifier of the reward series used. You can find the reward series available in `integer-series.hpp`. This defaults to a tetrahedral series, and if you pass a non-validating value it will default to make the level = the count (linear series, n=n).
 
+Reward Level Seriec Options: FIBONACCI, SILVER, TETRAHEDRAL, OCTAHEDRAL, HEXAHEDRAL, ICOSAHEDRAL, DODECAHEDRAL, LUCAS, TRIANGULAR, SQUARE, PENTAGONAL, HEXAGONAL
+
+
 2. The coefficient value will also be multiplied. If you don't want to have a bonus reward for either the HODL or the referral, you can set the coefficient to 0, acts as a special value. 
 
 3. The multipliers are both multiplied together, meaning you can have some extremely high rewards. For this reason, it's important to set a very small amount when setting the rewards for the template, which you will do when calling the `addtemplates` action
