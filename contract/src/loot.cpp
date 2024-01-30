@@ -4,17 +4,17 @@
 ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol& token_symbol, const name& token_contract, const uint32_t& time_unit_length, const uint32_t& unstake_period,
                         const string& reward_series_referral = string("TETRAHEDRAL"), const double& reward_coefficient_referral = 1.0, const string& reward_series_hodl = string("TETRAHEDRAL"), const double& reward_coefficient_hodl = 1.0){
     // --- Authorization Check --- // 
-   check(has_auth(get_self()) || has_auth(user), "Missing authorization by user.");
-   check(isAuthorized(collection, user), "Missing Authorization. To start rewards, you must be authorized for the collection on atomicassets.");
+   check(has_auth(get_self()) || has_auth(user), "⚡️ Missing authorization by user.");
+   check(isAuthorized(collection, user), "⚡️ Missing Authorization. To start rewards, you must be authorized for the collection on atomicassets.");
 
     // --- Check contract at address --- //
-    check(is_account(token_contract), "Token contract account does not exist");
+    check(is_account(token_contract), "⚡️ Token contract account does not exist");
 
     // --- Basic Token Check --- //
     stat_t stat(token_contract, token_symbol.code().raw());
-    stat.require_find(token_symbol.code().raw(), "Token symbol does not exist on the token contract");
+    stat.require_find(token_symbol.code().raw(), "⚡️ Token symbol does not exist on the token contract");
 
-    // --- Initialize config_t --- //'
+    // --- Initialize config_t --- //
     config_t config_tbl(get_self(), get_self().value);
     auto config_itr = config_tbl.find(collection.value);
 
@@ -52,22 +52,22 @@ ACTION loot::setnftcolrew(const name& user, const name& collection, const symbol
 
 ACTION loot::addtemplates(const name& user, const uint32_t& template_id, const name& collection, const asset& timeunit_rate){
     // --- Authentication Check --- //
-    check(has_auth(user) || has_auth(get_self()), "Missing authorization by user.");
-    check(isAuthorized(collection, user), "Missing Authorization. To start rewards, you must be authorized for the collection on atomicassets.");
+    check(has_auth(user) || has_auth(get_self()), "⚡️ Missing authorization by user.");
+    check(isAuthorized(collection, user), "⚡️ Missing Authorization. To start rewards, you must be authorized for the collection on atomicassets.");
 
     // --- Access Config Collection Table --- //
     config_t config_tbl(get_self(), get_self().value);
     auto config_itr = config_tbl.find(collection.value);
-    check(config_itr != config_tbl.end(), "Collection config not found.");
+    check(config_itr != config_tbl.end(), "⚡️ Collection config not found.");
 
     // --- Check if the timeunit_rate symbol matches the collection config symbol --- //
-    check(timeunit_rate.amount > 0, "timeunit_rate must be positive"); // Check if the hourly rate is valid
-    check(config_itr->token_symbol == timeunit_rate.symbol, "symbol mismatch");
+    check(timeunit_rate.amount > 0, "⚡️ timeunit_rate must be positive"); // Check if the hourly rate is valid
+    check(config_itr->token_symbol == timeunit_rate.symbol, "⚡️ symbol mismatch");
 
     // --- Check if the Template Exists in AtomicAssets and is Valid --- //
     auto aa_template_tbl = atomicassets::get_templates(collection);
     auto aa_template_itr = aa_template_tbl.find(uint64_t(template_id));
-    check(aa_template_itr != aa_template_tbl.end(), "Template id: " + std::to_string(template_id) + " not found in collection " + collection.to_string());
+    check(aa_template_itr != aa_template_tbl.end(), "⚡️ Template id: " + to_string(template_id) + " not found in collection " + collection.to_string());
 
     // --- Get Templates Table --- //
     template_t template_tbl(get_self(), get_self().value);
@@ -92,25 +92,25 @@ ACTION loot::addtemplates(const name& user, const uint32_t& template_id, const n
 
 ACTION loot::rmtemplates(const name& user, const uint32_t& template_id, const name& collection) {
     // --- Authentication Check --- //
-   check(isAuthorized(collection, user), "Missing Authorization. To remove templates, you must be authorized for the collection on atomicassets.");
+   check(isAuthorized(collection, user), "⚡️ Missing Authorization. To remove templates, you must be authorized for the collection on atomicassets.");
 
     // --- Access Config Collection Table --- //
     config_t config_tbl(get_self(), get_self().value);
     auto config_itr = config_tbl.find(collection.value);
-    check(config_itr != config_tbl.end(), "Collection config not found.");
+    check(config_itr != config_tbl.end(), "⚡️ Collection config not found.");
 
     // --- Get Templates Table --- //
     template_t template_tbl(get_self(), get_self().value);
     auto template_row = template_tbl.find(uint64_t(template_id));
 
     // --- Erase the Template --- //
-    check(template_row != template_tbl.end(), "Template not found in the collection.");
+    check(template_row != template_tbl.end(), "⚡️ Template not found in the collection.");
     template_tbl.erase(template_row);
 }
 
 ACTION loot::resetuser(const name& user){
     // --- Authentication Check --- // 
-     check(has_auth(get_self()) || has_auth(user), "Missing authorization by admin or the user themselves.");
+     check(has_auth(get_self()) || has_auth(user), "⚡️ Missing authorization by admin or the user themselves.");
 
     // --- Delete the User --- //
     user_t user_tbl(get_self(), get_self().value);
@@ -137,7 +137,7 @@ ACTION loot::resetuser(const name& user){
     // --- Return NFTs to owner --- //
     if (staked_assets.size() > 0) {
         action(permission_level { get_self(), name("active") }, atomicassets::ATOMICASSETS_ACCOUNT, name("transfer"),
-            make_tuple(get_self(), user, staked_assets, string("Returning your NFTs, stake more anytime")))
+            make_tuple(get_self(), user, staked_assets, string("☀️ Returning your NFTs, stake more anytime")))
             .send();
     }
 }
@@ -147,7 +147,7 @@ ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
 
     // --- Authentication Check --- // 
     if (!has_auth(user)) {
-        check(false, string("User " + user.to_string() + " has not authorized this action.").c_str());
+        check(false, string("⚡️ User " + user.to_string() + " has not authorized this action.").c_str());
     }
 
 
@@ -155,7 +155,7 @@ ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
 
     // --- See if user is already registered --- //
     auto user_itr = user_tbl.find(user.value);
-    check(user_itr == user_tbl.end(), string("Looks like " + user.to_string() + " is already registered").c_str());
+    check(user_itr == user_tbl.end(), string("⚡️ Looks like " + user.to_string() + " is already registered").c_str());
 
     // --- Handle referrer --- //
     if (referrer != ""_n && referrer != user) {
@@ -165,7 +165,7 @@ ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
         if (referrer_itr == user_tbl.end()) {
 
             // --- Check user exists --- //
-            check(is_account(referrer), "Referring user can't be found.");
+            check(is_account(referrer), "⚡️ Referring user can't be found.");
 
             user_tbl.emplace(get_self(), [&](auto& row) {
                 row.user = referrer;
@@ -215,12 +215,12 @@ ACTION loot::regnewuser(const name& user, const name& referrer = ""_n) {
 
 ACTION loot::claim(const name& user, const name& collection) {
     // --- Authentication Check --- //
-    check(has_auth(user), "User " + user.to_string() + " has not authorized this action");
+    check(has_auth(user), "⚡️ User " + user.to_string() + " has not authorized this action");
 
     // --- Access Tables --- //
     config_t config_tbl(get_self(), get_self().value);
     auto config_itr = config_tbl.find(collection.value);
-    check(config_itr != config_tbl.end(), "Collection configuration not found.");
+    check(config_itr != config_tbl.end(), "⚡️ Collection configuration not found.");
 
     user_templ_t user_template_tbl(get_self(), user.value);
     template_t template_tbl(get_self(), get_self().value);
@@ -239,7 +239,7 @@ ACTION loot::claim(const name& user, const name& collection) {
     uint64_t refscore = user_itr->refscore;
     uint32_t refscore_lvl;
 
-    if (reward_series_referral != std::vector<uint64_t>()){
+    if (reward_series_referral != vector<uint64_t>()){
         uint32_t series_size_referral = reward_series_referral.size();
 
         for (size_t i = 0; i < series_size_referral; ++i) {
@@ -279,7 +279,7 @@ ACTION loot::claim(const name& user, const name& collection) {
             template_count = user_template_itr->amount_staked;
 
             // --- Get hodl level --- //
-            if (reward_series_hodl != std::vector<uint64_t>()){
+            if (reward_series_hodl != vector<uint64_t>()){
                 for (size_t i = 0; i < series_size_hodl; ++i) {
                     if (template_count < reward_series_hodl[i]) {
                         hodl_lvl = i + 1;
@@ -315,18 +315,18 @@ ACTION loot::claim(const name& user, const name& collection) {
 
     // --- Decrement the bank record by the claimed amount --- //
     bank_tbl.modify(bank_itr, same_payer, [&](auto& row) {
-        row.amount -= claimed_amount; // Subtract the claimed amount from the bank's balance for this collection
+        row.amount -= claimed_amount; 
     });
 
 
 
     // --- Detailed Memo --- //
     string memo = "\U0001F4B0 ";
-    memo += "Looted: " + std::to_string(reward_for_template.amount) + ", for " + std::to_string(time_units_passed) + " Time Units, ";
-    memo += "HODL Lvl: " + std::to_string(hodl_lvl) + ", ";
-    memo += "Bonus: " + std::to_string((int) config_itr->reward_coefficient_hodl) + "x, ";
-    memo += "Invite Lvl: " + std::to_string(refscore_lvl) + ", ";
-    memo += "Bonus: " + std::to_string((int) config_itr->reward_coefficient_referral) + "x.";
+    memo += "Looted: " + to_string(reward_for_template.amount) + ", for " + to_string(time_units_passed) + " Time Units, ";
+    memo += "HODL Lvl: " + to_string(hodl_lvl) + ", ";
+    memo += "Bonus: " + to_string((int) config_itr->reward_coefficient_hodl) + "x, ";
+    memo += "Invite Lvl: " + to_string(refscore_lvl) + ", ";
+    memo += "Bonus: " + to_string((int) config_itr->reward_coefficient_referral) + "x.";
 
     // --- Send the reward tokens --- //
     action(
@@ -353,8 +353,8 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids) {
     // --- Iterate over each asset to unstake --- //
     for (const uint64_t& asset_id : asset_ids) {
         auto asset_itr = asset_tbl.find(asset_id); // Find the asset data
-        check(asset_itr != asset_tbl.end(), "⚡️ NFT id: " + std::to_string(asset_id) + " is not staked");
-        check(asset_itr->owner == user, "⚡️ NFT id: " + std::to_string(asset_id) + " does not belong to " + user.to_string());
+        check(asset_itr != asset_tbl.end(), "⚡️ NFT id: " + to_string(asset_id) + " is not staked");
+        check(asset_itr->owner == user, "⚡️ NFT id: " + to_string(asset_id) + " does not belong to " + user.to_string());
 
         // --- Get the assets table --- //
         const auto& aa_asset_tbl = atomicassets::get_assets(get_self());
@@ -371,7 +371,7 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids) {
 
         // --- Check if the asset can be unstaked (based on unstake_period) --- //
         auto period_sec = current_time_point().sec_since_epoch() - asset_itr->last_claim.sec_since_epoch();
-        check(period_sec >= config_itr->unstake_period, "⚡️ NFT id: " + std::to_string(asset_id) + " cannot be unstaked yet");
+        check(period_sec >= config_itr->unstake_period, "⚡️ NFT id: " + to_string(asset_id) + " cannot be unstaked yet");
 
         // --- Update the amount staked in the user_templ_s table --- //
         auto user_template_itr = user_template_tbl.find(user.value);
@@ -394,34 +394,35 @@ ACTION loot::unstake(const name& user, const vector<uint64_t>& asset_ids) {
         permission_level { get_self(), name("active") },
         atomicassets::ATOMICASSETS_ACCOUNT,
         name("transfer"),
-        make_tuple(get_self(), user, asset_ids, string("Unstaking Loot"))
+        make_tuple(get_self(), user, asset_ids, string("☀️ Unstaking Loot"))
     ).send();
 
 }
 
 
 ACTION loot::refund(const name& user, const name& collection, const asset& refund_amount) {
-    // --- Authentication _ Validity Checks --- //
-    check(has_auth(user), "user " + user.to_string() + " has not authorized this action");
-    check(refund_amount.amount > 0, "Refund amount must be positive");
-    check(isAuthorized(collection, user), "User is not authorized for this collection");
+    // --- Authentication + Validity Checks --- //
+    check(has_auth(user), "⚡️ User " + user.to_string() + " has not authorized this action");
+    check(refund_amount.amount > 0, "⚡️ Refund amount must be positive");
+    check(isAuthorized(collection, user), "⚡️ User is not authorized for this collection");
 
     // --- Access the bank table --- //
     bank_t bank_tbl(get_self(), get_self().value);
     auto bank_itr = bank_tbl.find(collection.value);
 
     // --- Check if there is a record for the collection --- //
-    check(bank_itr != bank_tbl.end(), "⚡️ No record found for this collection in the bank");
+    check(bank_itr != bank_tbl.end(), "⚡️ No bank for this collection");
 
     // --- Check if there are enough funds to refund --- //
     check(bank_itr->amount >= refund_amount, "⚡️ Insufficient funds to refund");
 
     // --- Send the refund to the user --- //
+    string memo = "☀️ Refunding bank for collection: "  + user.to_string();
     action(
-        permission_level{get_self(), "active"_n},
-        bank_itr->token_contract, // Assuming the token contract is stored in the bank record
-        "transfer"_n,
-        std::make_tuple(get_self(), user, refund_amount, std::string("Refund for collection: ") + collection.to_string())
+        permission_level{get_self(), name("active")},
+        bank_itr->token_contract, 
+        name("transfer"),
+        make_tuple(get_self(), user, refund_amount, memo)
     ).send();
 
         // --- Update the record with the remaining amount --- //
@@ -445,7 +446,7 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
 
         // --- Check if the user is registered --- //
         if (user_itr == user_tbl.end()) {
-            check(false, string("user " + from.to_string() + " is not registered").c_str());
+            check(false, string("⚡️ User " + from.to_string() + " is not registered").c_str());
         }
 
         // --- Get the assets table (scoped to the contract) --- //
@@ -458,11 +459,11 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
         for (const uint64_t& asset_id : asset_ids) {
             // --- Check the atomic assets table --- //
             auto aa_asset_itr = aa_asset_tbl.find(asset_id);
-            check(aa_asset_itr != aa_asset_tbl.end(), "⚡️ Asset ID: " + std::to_string(asset_id) + " does not exist.");
+            check(aa_asset_itr != aa_asset_tbl.end(), "⚡️ Asset ID: " + to_string(asset_id) + " does not exist.");
 
             // --- Check if the assert is stackable --- //
             auto template_itr = template_tbl.find(aa_asset_itr->template_id);
-            check(template_itr != template_tbl.end(), "⚡️ Template ID: " + std::to_string(aa_asset_itr->template_id) + " is not stakeable. Collection owner must add it first.");
+            check(template_itr != template_tbl.end(), "⚡️ Template ID: " + to_string(aa_asset_itr->template_id) + " is not stakeable. Collection owner must add it first.");
 
             // --- Store a record in the assets table --- //
             asset_tbl.emplace(get_self(), [&](auto& row) {
@@ -471,7 +472,7 @@ ACTION loot::refund(const name& user, const name& collection, const asset& refun
                 row.last_claim = time_point_sec(current_time_point());
             });
 
-            // --- Update or insert into the user assets  --- //
+            // --- Update or insert into the user assets --- //
             auto newtempid = aa_asset_itr->collection_name;
             auto user_template_itr = user_template_tbl.find(from.value);
             if (user_template_itr == user_template_tbl.end()) {

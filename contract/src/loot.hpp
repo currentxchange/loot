@@ -114,7 +114,7 @@ private:
         name token_contract;
         asset amount;
 
-        uint64_t primary_key() const { return collection.value; }
+        auto primary_key() const { return collection.value; }
     };
     typedef multi_index<name("bank"), bank_s> bank_t;
 
