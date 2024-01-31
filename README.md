@@ -1,10 +1,8 @@
-Here's a structured README for your repository that explains the actions and features of your NFT staking smart contract using AtomicAssets:
-
----
-
 # Loot 💰 NFT Staking Smart Contract for AtomicAssets NFT collections
 
-[Testnet deployment](https://testnet.waxblock.io/account/whitepumats2)
+<center>
+ [🛠 Testnet deployment](https://testnet.waxblock.io/account/whitepumats2) | [📝 Documentation](https://docs.cxc.world/loot) 
+</center> 
 
 ## 🌞 Setting Up Rewards for Collection Owners
 To set up NFT staking rewards for your collection, follow these steps:
@@ -26,13 +24,6 @@ Adjust eligible templates or remove them as needed with `addtemplates` or `rmtem
 
 - Step 6: Communicate with Your Community
 Inform your community about the staking process, rewards, and any changes to ensure transparency and engagement.
-
-
-
-
-
-
-
 
 **For NFT Holders:**
 - Register on the contract and include a Referrer for a +1 Referral score.
