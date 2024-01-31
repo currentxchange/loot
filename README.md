@@ -1,8 +1,8 @@
 # Loot 💰 NFT Staking Smart Contract for AtomicAssets NFT collections
 
-<center>
- [🛠 Testnet deployment](https://testnet.waxblock.io/account/whitepumats2) | [📝 Documentation](https://docs.cxc.world/loot) 
-</center> 
+
+[🛠 Testnet deployment](https://testnet.waxblock.io/account/whitepumats2) | [📝 Documentation](https://docs.cxc.world/loot) 
+
 
 ## 🌞 Setting Up Rewards for Collection Owners
 To set up NFT staking rewards for your collection, follow these steps:
@@ -157,7 +157,9 @@ This code + compiled contract is provided "AS IS" without warranty of any kind. 
 
 
 ## Thanks 🙏
-Loosely based on ezstake from [benjiewheeler](https://github.com/benjiewheeler) with support from [WAX Labs](https://labs.wax.io/proposals/84) 
+Build by re-imagining [ezstake](https://github.com/benjiewheeler/ezstake) from [benjiewheeler](https://github.com/benjiewheeler) 
+
+Made possible by [WAX Labs](https://labs.wax.io/proposals/84) 
 
 <center>
 
