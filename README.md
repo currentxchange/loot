@@ -37,14 +37,14 @@ Inform your community about the staking process, rewards, and any changes to ens
 **For Project Owners:**
 - Offer various rewards for multiple templates within your collection, and allow your users to easily claim their loot. 
 - Incentivize participation with reward multipliers for the number of NFT staked, and the number of invites a user has. 
-- You can turn off for word multipliers for the referral bonus as well as the NFT state amount bonus by setting the coefficient to 0 when calling `
+- You can turn off both multipliers for the referral bonus as well as the NFT state amount bonus by setting the coefficient to 0 when calling `setconfig`
 
 ### Features
 
-- Customizable time unit length (1 TU = 1 reward).
-- Template management for stakable NFTs.
-- Referral system with rewards multiplier.
-- Rewards multiplier based on the number of NFTs staked per template.
+- Customizable time unit length (1 TU = 1 reward). 
+- Template management for stakable NFTs. 
+- Referral system with rewards multiplier. 
+- Rewards multiplier based on the number of NFTs staked per template. 
 
 
 ### Contract Structure
@@ -59,6 +59,10 @@ The contract is structured to handle user registrations, NFT staking/unstaking, 
 ### Leveled Rewards using Integer Series
 
 The contract utilizes various integer sequences for calculating rewards, offering a range of series including Fibonacci, Silver Ratio, Tetrahedral, and more. This allows for a rich and flexible rewards system that can be tailored to the specific needs and goals of the NFT project. See them in `integer-series.hpp`
+
+> ⚡️ Warning: Failure to understand the reward multipliers may result in overpaying with your token. Once you deploy the contract, you must send rewards to it or it will stop paying. If you want the rewards out of the contract, call `refund`, ⚠️ any authorized account on the NFT collection can take out the rewards ⚠️. You can always set multipliers to 0 to pause the rewards, and also you can update the config with base unit of rewards, adjusting the final amount. 
+
+Loot uses integer series for reward levels corresponding to multipliers. You'll call `setconfig` with one of these values: FIBONACCI, SILVER, TETRAHEDRAL, OCTAHEDRAL, HEXAHEDRAL, ICOSAHEDRAL, DODECAHEDRAL, LUCAS, TRIANGULAR, SQUARE, PENTAGONAL, HEXAGONAL. If you pass any other value Get to know these series in the integer-series.hpp file.
 
 ---
 
@@ -112,7 +116,7 @@ There are some important concepts to understand when calling this action to set 
 
 1. The reward series arguments require sending an all-caps identifier of the reward series used. You can find the reward series available in `integer-series.hpp`. This defaults to a tetrahedral series, and if you pass a non-validating value it will default to make the level = the count (linear series, n=n).
 
-Reward Level Seriec Options: FIBONACCI, SILVER, TETRAHEDRAL, OCTAHEDRAL, HEXAHEDRAL, ICOSAHEDRAL, DODECAHEDRAL, LUCAS, TRIANGULAR, SQUARE, PENTAGONAL, HEXAGONAL
+Reward Level Series Options: FIBONACCI, SILVER, TETRAHEDRAL, OCTAHEDRAL, HEXAHEDRAL, ICOSAHEDRAL, DODECAHEDRAL, LUCAS, TRIANGULAR, SQUARE, PENTAGONAL, HEXAGONAL
 
 
 2. The coefficient value will also be multiplied. If you don't want to have a bonus reward for either the HODL or the referral, you can set the coefficient to 0, acts as a special value. 
